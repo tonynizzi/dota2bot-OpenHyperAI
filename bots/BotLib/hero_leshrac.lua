@@ -940,31 +940,49 @@ function X.ConsiderPulseNova()
     return BOT_ACTION_DESIRE_NONE
 end
 
+-- 7.42 Nihilism: no target, no longer Ethereal. Disarms enemies within radius (550) and
+-- constantly basic-dispels them and Leshrac for the duration. Does not pierce debuff immunity.
 function X.ConsiderNihilism()
-    if not Nihilism:IsTrained()
-    or not Nihilism:IsFullyCastable()
+    if not J.CanCastAbility(Nihilism)
     then
         return BOT_ACTION_DESIRE_NONE
     end
 
     local nRadius = Nihilism:GetSpecialValueInt('radius')
+    if nRadius == nil or nRadius <= 0 then nRadius = 550 end
 
-    if J.IsWithoutTarget(bot)
-    and J.GetAttackProjectileDamageByRange(bot, 1200) >= bot:GetHealth()
-	then
-		return BOT_ACTION_DESIRE_HIGH
-	end
+    local bInFight = J.IsGoingOnSomeone(bot) or J.IsInTeamFight(bot, 1200)
+    local bRetreating = J.IsRetreating(bot)
+    local nInRangeEnemy = J.GetEnemiesNearLoc(bot:GetLocation(), nRadius)
 
-	if J.IsRetreating(bot)
-	then
-		local nInRangeEnemy = J.GetEnemiesNearLoc(bot:GetLocation(), nRadius)
+    -- (a) Disarm right-clickers on top of Leshrac during fights / retreat
+    if bInFight or bRetreating
+    then
+        for _, enemyHero in pairs(nInRangeEnemy)
+        do
+            if J.IsValidHero(enemyHero)
+            and J.CanCastOnNonMagicImmune(enemyHero)
+            and not enemyHero:IsDisarmed()
+            and not enemyHero:IsInvulnerable()
+            and (enemyHero:GetAttackTarget() == bot
+                or (J.IsCore(enemyHero) and (bInFight or bot:WasRecentlyDamagedByHero(enemyHero, 2.0))))
+            then
+                return BOT_ACTION_DESIRE_HIGH
+            end
+        end
+    end
 
-		if bot:WasRecentlyDamagedByAnyHero(2)
-        and nInRangeEnemy ~= nil and #nInRangeEnemy >= 1
-		then
-			return BOT_ACTION_DESIRE_HIGH
-		end
-	end
+    -- (b) Self basic dispel: rooted or slowed with enemies around
+    local bSlowed = bot:GetCurrentMovementSpeed() < bot:GetBaseMovementSpeed() * 0.85
+    if (bot:IsRooted() or bSlowed)
+    and (bInFight or bRetreating or bot:WasRecentlyDamagedByAnyHero(2.0))
+    then
+        local nNearbyEnemy = J.GetEnemiesNearLoc(bot:GetLocation(), 900)
+        if #nNearbyEnemy >= 1
+        then
+            return BOT_ACTION_DESIRE_HIGH
+        end
+    end
 
     return BOT_ACTION_DESIRE_NONE
 end

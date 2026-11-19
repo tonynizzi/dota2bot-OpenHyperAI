@@ -60,14 +60,19 @@
 			-- Max neutrals awarded per tier. You might be tempted to make this less than 5 to hinder the bots
 			-- a bit, but note that the award method doesn't prioritize bot roles, so you might end up with a
 			-- carry that doesn't have an item.
-			maxPerTier = {5,5,5,5,5},
+			-- 7.42: 4 neutral tiers (was 5).  All three arrays below must have one entry per tier.
+			maxPerTier = {5,5,5,5},
 			-- adds this number to the awards as they come out (make this positive to give better items early
 			-- make it negative to cause errors, probably.  If you want slower items just change the timings)
 			tierOffset = 0,
 			-- game time (seconds) at which awards are given.
-			timings = {0, 420, 1020, 2020, 3600},
-			-- default dota values, see NeutralItems:GetTimingDifficultyScaleShift()
-			timingsDefault = {0, 1020, 1620, 2020, 3600},
+			-- "1 full tier ahead": T2/T3 keep their old 7:00/17:00 timings (T3 at 17:00 is roughly the
+			-- game's T2 time), and the last tier stays 10 minutes early (40:00 vs 50:00) instead of a full
+			-- tier, matching the old table, which never pulled the top tiers forward much.  A full shift
+			-- (T4 at 30:00) would hand out the old tier-5 items at 10:00 at max difficulty scale.
+			timings = {0, 420, 1020, 2400},
+			-- default dota values (7.42: 0:00, 15:00, 30:00, 50:00), see NeutralItems:GetTimingDifficultyScaleShift()
+			timingsDefault = {0, 900, 1800, 3000},
 			-- variance for timings (this number of seconds added to base timing per bot)
 			variance = {30, 240},
 			-- if true, announce awards to chat

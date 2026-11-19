@@ -73,7 +73,7 @@ sRoleItemsBuyList['pos_2'] = {
 sRoleItemsBuyList['pos_3'] = {
 	"item_tank_outfit",
     "item_helm_of_the_dominator",
-    "item_helm_of_the_overlord",--
+    "item_ristuls_devotion",-- 7.42: Helm of the Overlord removed
     "item_ultimate_scepter",
 	"item_blink",
 	"item_heavens_halberd",
@@ -160,7 +160,7 @@ local CallOfTheWildBoar = bot:GetAbilityByName('beastmaster_call_of_the_wild_raz
                           or bot:GetAbilityByName('beastmaster_summon_razorback')
                           or (sAbilityList[2] and bot:GetAbilityByName(sAbilityList[2]))
 local CallOfTheWildHawk = bot:GetAbilityByName('beastmaster_call_of_the_wild_raptor')
-                          or bot:GetAbilityByName('beastmaster_summon_raptors')
+                          or bot:GetAbilityByName('beastmaster_summon_raptor')
                           or (sAbilityList[3] and bot:GetAbilityByName(sAbilityList[3]))
 -- local InnerBeast     -- 7.41: now innate, cannot be cast
 -- local DrumsOfSlom        = bot:GetAbilityByName('beastmaster_drums_of_slom')
@@ -198,7 +198,7 @@ function X.SkillsComplement()
                         or bot:GetAbilityByName('beastmaster_summon_razorback')
                         or (sAbilityList[2] and bot:GetAbilityByName(sAbilityList[2]))
     CallOfTheWildHawk = bot:GetAbilityByName('beastmaster_call_of_the_wild_raptor')
-                        or bot:GetAbilityByName('beastmaster_summon_raptors')
+                        or bot:GetAbilityByName('beastmaster_summon_raptor')
                         or (sAbilityList[3] and bot:GetAbilityByName(sAbilityList[3]))
     PrimalRoar = bot:GetAbilityByName('beastmaster_primal_roar')
 

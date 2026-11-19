@@ -265,7 +265,9 @@ function X.ConsiderBoundlessStrike()
 		end
 	end
 
+    -- With Aghanim's Shard (7.42) Boundless Strike jumps MK to the target point, which would land him on the chaser
     if J.IsRetreating(bot)
+    and not J.HasAghanimsShard(bot)
     then
         local nInRangeAlly = J.GetNearbyHeroes(bot,800, false, BOT_MODE_NONE)
         local nInRangeEnemy = J.GetNearbyHeroes(bot,800, true, BOT_MODE_NONE)

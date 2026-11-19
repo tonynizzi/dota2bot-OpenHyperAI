@@ -295,7 +295,9 @@ end
 
 -- no alt-cast support from the api
 function X.ConsiderDrinkingBuddies()
-    if not J.CanCastAbility(DrinkingBuddies) then
+    if not J.CanCastAbility(DrinkingBuddies)
+    or bot:IsRooted()
+    then
         return BOT_ACTION_DESIRE_NONE, nil
     end
 

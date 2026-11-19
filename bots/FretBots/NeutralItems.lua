@@ -131,14 +131,21 @@ end
 function NeutralItems:CreateAndInsert(bot, itemName, tier)
 	if bot:HasRoomForItem(itemName, true, true) then
 		local item = CreateItem(itemName, bot, bot)
+		-- An item Valve removed returns nil here; skip it instead of erroring.
+		if item == nil then
+			print('[WARN] NeutralItems: CreateItem failed for '..tostring(itemName))
+			return false
+		end
 		item:SetPurchaseTime(0)
 		bot:AddItem(item)
 
 		local enhancement = NeutralItems:GetRandomEnhancementByTier(tier)
 		if enhancement then
 			local enha = CreateItem(enhancement.name, bot, bot)
-			enha:SetPurchaseTime(0)
-			bot:AddItem(enha)
+			if enha ~= nil then
+				enha:SetPurchaseTime(0)
+				bot:AddItem(enha)
+			end
 		end
 		bot.stats.neutralTier = tier
 		-- The following has been obviated due to royal jelly rework.
@@ -211,6 +218,8 @@ function NeutralItems:GetItemForInternalName(name)
 end
 
 -- Returns a set of items for a given tier (7.33 token style)
+-- Never returns more choices than exist; falls back to the master table if
+-- AllNeutrals has no items left for this tier (e.g. removed by isRemoveUsedItems).
 function NeutralItems:GetTokenTableForTier(tier)
 	local tableCount = 5
 	local items = {}
@@ -221,6 +230,15 @@ function NeutralItems:GetTokenTableForTier(tier)
 			count = count + 1
 		end
 	end
+	if count == 0 then
+		for _,item in ipairs(masterNeutralTable.items) do
+			if item.tier == tier then
+				table.insert(items,item)
+				count = count + 1
+			end
+		end
+	end
+	if count < tableCount then tableCount = count end
 	-- shuffle this table
 	local shuffled = NeutralItems:Shuffle(items)
 	local choices = {}
@@ -252,7 +270,7 @@ function NeutralItems:SelectRandomItem(tier, unit)
 	else
 		items,count = NeutralItems:GetTableForTierAndRole(tier,unit)
 	end
-	if items == nil then return nil end
+	if items == nil or count == nil or count < 1 then return nil end
 	-- pick one at random
 	local item = items[math.random(count)]
 	-- if there was a valid item, remove it from the table (if settings tell us to)
@@ -426,20 +444,26 @@ end
 	(7.41: Tier 1 neutrals now available from 0:00, timingsDefault[1] = 0)
 -            difficulty 0, we'd have (0-0)*(1-0) resulting in a shift of 0 seconds (neutral matching game default)
 			difficulty 1.0, we'd have (0-0)*(1-1) resulting in a shift of 0 seconds
-		At baseline of 3600 for tier 3 and ...
--            difficulty 0, we'd have (1620-1020)*(1-0) resulting in a shift of 600 seconds (600+1020=1620=game default)
-			difficulty 0.7, we'd have (1620-1020)*(1-0.7) resulting in a shift of 180 seconds (180+1020=1200)
+		At baseline of 1020 for tier 3 and ...
+-            difficulty 0, we'd have (1800-1020)*(1-0) resulting in a shift of 780 seconds (780+1020=1800=game default)
+			difficulty 0.7, we'd have (1800-1020)*(1-0.7) resulting in a shift of 234 seconds (234+1020=1254)
 
-	Rough reference using timings = {0, 420, 1020, 2020, 3600}:
-	| Tier          | 1    | 2    | 3    | 4    | 5    |
-	|---------------|------|------|------|------|------|
-	| 0 (base game) | 0    | 1020 | 1620 | 2020 | 3600 |
-	| 0.5           | 0    | 720  | 1320 | 2020 | 3600 |
-	| 0.7           | 0    | 600  | 1200 | 2020 | 3600 |
-	| 1             | 0    | 420  | 1020 | 2020 | 3600 |
-	| 1.5           | 0    | 120  | 720  | 2020 | 3600 |
+	7.42 (4 tiers) reference using timings = {0, 420, 1020, 2400}, timingsDefault = {0, 900, 1800, 3000}:
+	| Scale         | 1    | 2    | 3    | 4    |
+	|---------------|------|------|------|------|
+	| 0 (base game) | 0    | 900  | 1800 | 3000 |
+	| 0.5           | 0    | 660  | 1410 | 2700 |
+	| 0.7           | 0    | 564  | 1254 | 2580 |
+	| 1             | 0    | 420  | 1020 | 2400 |
+	| 1.5           | 0    | 180  | 630  | 2100 |
+	| 2 (max)       | 0    | 0    | 240  | 1800 |
+	(negative results are clamped to 0 by the callers)
 --]]
 function NeutralItems:GetTimingDifficultyScaleShift(tier)
-	local timingDifficultyShift = (Settings.neutralItems.timingsDefault[tier] - Settings.neutralItems.timings[tier]) * (1 - math.min(Settings.difficultyScale, 2))
+	local default = Settings.neutralItems.timingsDefault[tier]
+	local timing = Settings.neutralItems.timings[tier]
+	-- No such tier (e.g. tier 5 after 7.42): no shift.
+	if default == nil or timing == nil then return 0 end
+	local timingDifficultyShift = (default - timing) * (1 - math.min(Settings.difficultyScale, 2))
 	return timingDifficultyShift
 end

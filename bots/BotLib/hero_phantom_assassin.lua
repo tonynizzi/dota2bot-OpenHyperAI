@@ -720,7 +720,7 @@ function X.ConsiderE()
 		and bot:WasRecentlyDamagedByAnyHero( 3.1 )
 		and ( nLV >= 6 or nHP <= 0.3 )
 	then
-		local nEnemysHerosInRange = J.GetNearbyHeroes(bot, 740, true, BOT_MODE_NONE )
+		local nEnemysHerosInRange = J.GetNearbyHeroes(bot, 840, true, BOT_MODE_NONE )
 		if #nEnemysHerosInRange == 0
 		then
 			return BOT_ACTION_DESIRE_HIGH
@@ -731,9 +731,9 @@ function X.ConsiderE()
 	if J.IsInEnemyArea( bot ) and nLV >= 7
 	then
 		local nEnemies = J.GetNearbyHeroes(bot, 1600, true, BOT_MODE_NONE )
-		local nAllies = J.GetNearbyHeroes(bot, 1600, true, BOT_MODE_NONE )
+		local nAllies = J.GetNearbyHeroes(bot, 1600, false, BOT_MODE_NONE )
 		local nEnemyTowers = bot:GetNearbyTowers( 1600, true )
-		if #nEnemies == 0 and #nAllies <= 2 and nEnemyTowers == 0
+		if #nEnemies == 0 and #nAllies <= 2 and #nEnemyTowers == 0
 		then
 			return BOT_ACTION_DESIRE_HIGH
 		end

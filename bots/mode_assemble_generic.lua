@@ -4,13 +4,14 @@ if bot == nil or bot:IsInvulnerable() or not bot:IsHero() or not string.find(bot
 local J = require( GetScriptDirectory()..'/FunLib/jmz_func' )
 
 local PING_RECENCY = 8        -- respond to pings within this many seconds
-local ASSEMBLE_DURATION = 5    -- stay in assemble mode for this long after ping
+local ASSEMBLE_DURATION = 5    -- maximum duration after accepting a new ping
 local ASSEMBLE_DESIRE = 0.85   -- desire value when assembling
 local ARRIVE_RADIUS = 500      -- close enough to ping location
 local MAX_RESPOND_DIST = 3200  -- only respond if within this distance
 
 local assembleLoc = nil
 local assembleExpireTime = 0
+local lastProcessedPing = {}  -- per-player timestamps; keep across mode interruptions
 
 function GetDesire()
 	if not bot:IsAlive() then return BOT_MODE_DESIRE_NONE end
@@ -20,8 +21,11 @@ function GetDesire()
 	if human ~= nil and ping ~= nil
 	and ping.normal_ping
 	and ping.time ~= 0
+	and GameTime() >= ping.time
 	and GameTime() - ping.time < PING_RECENCY
+	and lastProcessedPing[human:GetPlayerID()] ~= ping.time
 	then
+		lastProcessedPing[human:GetPlayerID()] = ping.time
 		local dist = GetUnitToLocationDistance(bot, ping.location)
 		-- Only respond if we're not already very close and not too far away
 		if dist > ARRIVE_RADIUS and dist < MAX_RESPOND_DIST then

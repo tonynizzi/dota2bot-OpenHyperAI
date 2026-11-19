@@ -209,7 +209,6 @@ local abilityE = bot:GetAbilityByName( sAbilityList[3] )
 local abilityD = bot:GetAbilityByName( sAbilityList[4] )
 local FireShield = bot:GetAbilityByName( sAbilityList[5] )
 local talent2 = bot:GetAbilityByName( sTalentList[2] )
-local talent8 = bot:GetAbilityByName( sTalentList[8] )
 
 local castQDesire, castQTarget
 local castWDesire, castWTarget
@@ -220,7 +219,6 @@ local FireShieldDesire, FireShieldTarget
 
 local nKeepMana, nMP, nHP, nLV, hEnemyList, hAllyList, botTarget, sMotive
 local aetherRange = 0
-local talent8Damage = 0
 
 
 function X.SkillsComplement()
@@ -231,7 +229,6 @@ function X.SkillsComplement()
 
 	nKeepMana = 300
 	aetherRange = 0
-	talent8Damage = 0
 	nLV = bot:GetLevel()
 	nMP = bot:GetMana()/bot:GetMaxMana()
 	nHP = bot:GetHealth()/bot:GetMaxHealth()
@@ -243,7 +240,6 @@ function X.SkillsComplement()
 	local aether = J.IsItemAvailable( "item_aether_lens" )
 	if aether ~= nil then aetherRange = 250 end
 --	if talent2:IsTrained() then aetherRange = aetherRange + talent2:GetSpecialValueInt( "value" ) end
-	if talent8:IsTrained() then talent8Damage = talent8Damage + talent8:GetSpecialValueInt( "value" ) end
 
 
 	castQDesire, castQTarget, sMotive = X.ConsiderQ()
@@ -318,7 +314,7 @@ function X.ConsiderQ()
 
 	local nCastPoint = abilityQ:GetCastPoint()
 	local nManaCost = abilityQ:GetManaCost()
-	local nDamage = abilityQ:GetSpecialValueInt( "fireblast_damage" ) + talent8Damage
+	local nDamage = abilityQ:GetSpecialValueInt( "fireblast_damage" )
 	local nDamageType = DAMAGE_TYPE_MAGICAL
 
 	local nInRangeEnemyList = J.GetNearbyHeroes(bot, nCastRange + 50, true, BOT_MODE_NONE )

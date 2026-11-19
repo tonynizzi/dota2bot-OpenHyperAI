@@ -151,7 +151,7 @@ Item['sBasicItems'] = {
 	'item_holy_locket',
 	'item_hyperstone',
 	'item_infused_raindrop',
-	'item_javelin',
+	-- 'item_javelin', -- removed in 7.42
 	'item_lifesteal',
 	'item_magic_stick',
 	'item_mantle',
@@ -231,6 +231,7 @@ Item['sSeniorItems'] = {
 	'item_blink',
 	'item_cyclone',
 	'item_helm_of_the_dominator',
+	'item_bloodslinger',
 	'item_rod_of_atos',
 
 }
@@ -319,6 +320,11 @@ Item['sTopItems'] = {
 	'item_hydras_breath',
 	'item_consecrated_wraps',
 	'item_crellas_crozier',
+	'item_caduceus',
+	'item_ristuls_devotion',
+	'item_berserkers_sabatons',
+	'item_skypiercer',
+	'item_starforge',
 }
 
 local tTopItemList = {}
@@ -782,7 +788,7 @@ Item['item_mage_slayer']	= GetItemComponents( 'item_mage_slayer' )[1]
 
 -- Item['item_eternal_shroud'] removed from game in 7.41
 
-Item['item_helm_of_the_overlord']	= GetItemComponents( 'item_helm_of_the_overlord' )[1]
+-- Item['item_helm_of_the_overlord'] removed from game in 7.42
 
 Item['item_overwhelming_blink']	= GetItemComponents( 'item_overwhelming_blink' )[1]
 
@@ -807,7 +813,7 @@ Item["item_disperser"] 							= GetItemComponents( 'item_disperser' )[1]
 Item["item_blood_grenade"] 						= GetItemComponents( 'item_blood_grenade' )[1]
 
 ---------- 7.35 NEW ITEMS ---------------
-Item["item_angels_demise"] 						= GetItemComponents( 'item_angels_demise' )[1] --绝刃
+-- Item["item_angels_demise"] (Khanda) removed from game in 7.42
 Item["item_devastator"] 						= GetItemComponents( 'item_devastator' )[1] --圣斧
 
 ---------- 7.41 NEW ITEMS ---------------
@@ -816,6 +822,14 @@ Item["item_specialists_array"]				= GetItemComponents( 'item_specialists_array' 
 Item["item_hydras_breath"]					= GetItemComponents( 'item_hydras_breath' )[1]
 Item["item_consecrated_wraps"]				= GetItemComponents( 'item_consecrated_wraps' )[1]
 Item["item_crellas_crozier"]				= GetItemComponents( 'item_crellas_crozier' )[1]
+
+---------- 7.42 NEW ITEMS ---------------
+Item["item_bloodslinger"]				= GetItemComponents( 'item_bloodslinger' )[1]
+Item["item_caduceus"]					= GetItemComponents( 'item_caduceus' )[1]
+Item["item_ristuls_devotion"]			= GetItemComponents( 'item_ristuls_devotion' )[1]
+Item["item_berserkers_sabatons"]			= GetItemComponents( 'item_berserkers_sabatons' )[1] -- Sabatons of Mordiggian
+Item["item_skypiercer"]					= GetItemComponents( 'item_skypiercer' )[1]
+Item["item_starforge"]					= GetItemComponents( 'item_starforge' )[1]
 
 --新自定义物品
 Item['item_new_1']	= GetItemComponents( 'item_new_1' )[1]

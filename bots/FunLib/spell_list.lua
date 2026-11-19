@@ -127,7 +127,6 @@ X['spells'] = {
         ['chen_penitence'] = {weight = 0.1},
         ['chen_holy_persuasion'] = {weight = 1},
         ['chen_divine_favor'] = {weight = 0.1},
-        ['chen_summon_convert'] = {weight = 1},
         ['chen_hand_of_god'] = {weight = 0.2},
     },
     
@@ -338,7 +337,6 @@ X['spells'] = {
         ['juggernaut_blade_fury'] = {weight = 0.3},
         ['juggernaut_healing_ward'] = {weight = 0.3},
         ['juggernaut_blade_dance'] = {weight = 1},
-        ['juggernaut_swift_slash'] = {weight = 1},
         ['juggernaut_omni_slash'] = {weight = 1},
     },
     
@@ -474,8 +472,6 @@ X['spells'] = {
         ['meepo_poof'] = {weight = 1},
         ['meepo_ransack'] = {weight = 1},
         ['meepo_petrify'] = {weight = 0.3},
-        ['meepo_megameepo'] = {weight = 1},
-        ['meepo_megameepo_fling'] = {weight = 1},
         ['meepo_divided_we_stand'] = {weight = 1},
     },
 

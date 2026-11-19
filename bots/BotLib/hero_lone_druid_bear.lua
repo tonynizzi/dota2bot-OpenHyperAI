@@ -103,11 +103,10 @@ function X.ConsiderQ()
 
     if J.GetHP(bear) < 0.9 and bear:DistanceFromFountain() < 450 then return 0 end
 
-    -- too far from hero
+    -- too far from hero (7.42: Scepter disarm range is 1300, no longer global, so no Scepter exemption)
     if distanceFromHero > 3000
     and J.GetHP(bear) > 0.25
-    and not J.IsRetreating(bear)
-    and not J.Item.HasItem( bear, 'item_ultimate_scepter' ) then
+    and not J.IsRetreating(bear) then
         return BOT_ACTION_DESIRE_HIGH
     end
 

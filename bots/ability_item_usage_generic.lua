@@ -9,6 +9,8 @@ local bDebugMode = ( 10 == 10 )
 
 local J = require( GetScriptDirectory()..'/FunLib/jmz_func' )
 local Utils = require( GetScriptDirectory()..'/FunLib/utils' )
+local ReactionDelay = require(GetScriptDirectory()..'/FunLib/reaction_delay')
+local LocalUpdateNotice = require(GetScriptDirectory()..'/FunLib/local_update_notice')
 local BotBuild = dofile( GetScriptDirectory().."/BotLib/"..string.gsub( botName, "npc_dota_", "" ) )
 local Localization = require( GetScriptDirectory()..'/FunLib/localization' )
 local Customize = require(GetScriptDirectory()..'/Customize/general')
@@ -23,7 +25,7 @@ local bDeafaultItemHero = BotBuild['bDeafaultItem']
 local sAbilityLevelUpList = BotBuild['sSkillList']
 
 local RadiantFountain = Vector(-6619, -6336, 384)
-local DireFountain = Vector(6928, 6372, 392)
+local DireFountain = Vector(6716, 6160, 392) -- 7.42 estimate (see jmz_func.lua)
 
 local bNeedARDMReload = false
 local nLastKnownPosition = nil  -- tracks bot's position for !pos swap detection
@@ -990,7 +992,7 @@ local function ItemUsageComplement()
 	nMode = bot:GetActiveMode()
 
 	local aether = J.IsItemAvailable( "item_aether_lens" )
-	if aether ~= nil then aetherRange = 250 else aetherRange = 0 end
+	if aether ~= nil then aetherRange = 200 else aetherRange = 0 end
 
 	local nItemSlot = { 5, 4, 3, 2, 1, 0, 15, 16 }
 
@@ -2879,7 +2881,7 @@ end
 --天堂
 X.ConsiderItemDesire["item_heavens_halberd"] = function( hItem )
 
-	local nCastRange = 700 + aetherRange
+	local nCastRange = 500 + aetherRange
 	local sCastType = 'unit'
 	local hEffectTarget = nil
 	local sCastMotive = nil
@@ -2986,6 +2988,38 @@ end
 X.ConsiderItemDesire["item_helm_of_the_overlord"] = function( hItem )
 
 	return X.ConsiderItemDesire["item_helm_of_the_dominator"]( hItem )
+
+end
+
+-- 7.42: Skypiercer (Halberd upgrade) shares the Disarm active; Caduceus (Phylactery upgrade) has Force Staff's Force active
+X.ConsiderItemDesire["item_skypiercer"] = function( hItem )
+
+	return X.ConsiderItemDesire["item_heavens_halberd"]( hItem )
+
+end
+
+X.ConsiderItemDesire["item_caduceus"] = function( hItem )
+
+	return X.ConsiderItemDesire["item_force_staff"]( hItem )
+
+end
+
+-- 7.42: Greater Horn of Battle (Tormentor drop). No target, global, one charge:
+-- summons a mega-creep wave in every lane. Use it while the team is pushing or
+-- defending; otherwise don't sit on it for more than a minute.
+X.ConsiderItemDesire["item_horn_of_battle_greater"] = function( hItem )
+
+	if bot.hornOfBattleHeldSince == nil then bot.hornOfBattleHeldSince = DotaTime() end
+
+	if J.IsPushing( bot )
+		or J.IsDefending( bot )
+		or DotaTime() - bot.hornOfBattleHeldSince > 60
+	then
+		bot.hornOfBattleHeldSince = nil
+		return BOT_ACTION_DESIRE_HIGH, nil, 'none', 'Greater Horn of Battle'
+	end
+
+	return BOT_ACTION_DESIRE_NONE
 
 end
 
@@ -4539,7 +4573,7 @@ X.ConsiderItemDesire["item_essence_distiller"] = function( hItem )
 
 	if hItem:GetCurrentCharges() == 0 then return BOT_ACTION_DESIRE_NONE end
 
-	local nCastRange = 950 + aetherRange
+	local nCastRange = 850 + aetherRange
 	local sCastType = 'unit'
 	local hEffectTarget = nil
 	local sCastMotive = nil
@@ -6489,7 +6523,7 @@ end
 --行巫之祸
 X.ConsiderItemDesire["item_heavy_blade"] = function( hItem )
 
-	local nCastRange = 500
+	local nCastRange = 700
 	local sCastType = 'unit'
 	local hEffectTarget = nil
 	local sCastMotive = nil
@@ -8375,8 +8409,9 @@ end
 
 function ItemUsageThink()
 	if RefreshBotHandle() then return end
-	if bot:IsInvulnerable() or not bot:IsHero() or not bot:IsAlive() or not string.find(botName, "hero") or bot:IsIllusion() then return end
 	if bot.lastItemFrameProcessTime == nil then bot.lastItemFrameProcessTime = DotaTime() end
+	if ReactionDelay.ShouldWait(bot, J.Customize) then return end
+	if bot:IsInvulnerable() or not bot:IsHero() or not bot:IsAlive() or not string.find(botName, "hero") or bot:IsIllusion() then return end
 	if DotaTime() > 30 and (DotaTime() - bot.lastItemFrameProcessTime < (bot.frameProcessTime * (1 + Customize.ThinkLess))) then return end
 	bot.lastItemFrameProcessTime = DotaTime()
 	if not J.IsNoItemIllution(bot) then ItemUsageComplement() end
@@ -8384,8 +8419,10 @@ end
 
 function AbilityUsageThink()
 	if RefreshBotHandle() then return end
-	if bot:IsInvulnerable() or not bot:IsHero() or not bot:IsAlive() or not string.find(botName, "hero") or bot:IsIllusion() then return end
+	LocalUpdateNotice.Think(bot, J.Customize)
 	if bot.lastAbilityFrameProcessTime == nil then bot.lastAbilityFrameProcessTime = DotaTime() end
+	if ReactionDelay.ShouldWait(bot, J.Customize) then return end
+	if bot:IsInvulnerable() or not bot:IsHero() or not bot:IsAlive() or not string.find(botName, "hero") or bot:IsIllusion() then return end
 	if DotaTime() > 30 and (DotaTime() - bot.lastAbilityFrameProcessTime < (bot.frameProcessTime * (1 + Customize.ThinkLess))) and bot.isBear == nil then return end
 	bot.lastAbilityFrameProcessTime = DotaTime()
 	if BotBuild ~= nil and not J.IsNoAbilityIllution(bot) then BotBuild.SkillsComplement() end

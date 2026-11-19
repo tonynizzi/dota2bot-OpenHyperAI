@@ -22,15 +22,6 @@ local function __TS__StringIncludes(self, searchString, position)
     return index ~= nil
 end
 
-local function __TS__ArraySome(self, callbackfn, thisArg)
-    for i = 1, #self do
-        if callbackfn(thisArg, self[i], i - 1, self) then
-            return true
-        end
-    end
-    return false
-end
-
 local function __TS__StringStartsWith(self, searchString, position)
     if position == nil or position < 0 then
         position = 0
@@ -303,10 +294,7 @@ function updateDefendUnitStateCache()
         lastUpdate = now,
         enemyBuildings = GetUnitList(UnitType.EnemyBuildings),
         alliedHeroes = GetUnitList(UnitType.AlliedHeroes),
-        enemyHeroes = __TS__ArrayFilter(
-            GetUnitList(UnitType.Enemies),
-            function(____, u) return jmz.IsValidHero(u) end
-        ),
+        enemyUnits = GetUnitList(UnitType.Enemies),
         alliedCreeps = GetUnitList(UnitType.AlliedCreeps),
         enemyCreeps = __TS__ArrayFilter(
             GetUnitList(UnitType.Enemies),
@@ -330,19 +318,19 @@ function _recentHeroCountNear(loc, r, window)
     local cnt = 0
     for ____, id in ipairs(GetTeamPlayers(gameState.enemyTeam)) do
         do
-            local __continue19
+            local __continue18
             repeat
                 if not IsHeroAlive(id) then
-                    __continue19 = true
+                    __continue18 = true
                     break
                 end
                 local info = GetHeroLastSeenInfo(id)
                 if info and info[1] and info[1].time_since_seen <= window and GetLocationToLocationDistance(info[1].location, loc) <= r then
                     cnt = cnt + 1
                 end
-                __continue19 = true
+                __continue18 = true
             until true
-            if not __continue19 then
+            if not __continue18 then
                 break
             end
         end
@@ -353,7 +341,7 @@ function IsValidBuildingTarget(unit)
     return unit ~= nil and unit:IsAlive() and unit:IsBuilding()
 end
 function IsBaseThreatActive()
-    return DotaTime() < (baseThreatUntil or -1)
+    return baseThreatUntil ~= nil and DotaTime() < baseThreatUntil
 end
 function WeightedEnemiesAroundLocation(vLoc, nRadius)
     local now = DotaTime()
@@ -364,25 +352,38 @@ function WeightedEnemiesAroundLocation(vLoc, nRadius)
     end
     local unitState = updateDefendUnitStateCache()
     local count = 0
-    for ____, unit in ipairs(unitState.enemyHeroes) do
-        if jmz.IsValid(unit) and GetUnitToLocationDistance(unit, vLoc) <= nRadius then
-            local name = unit:GetUnitName()
-            if jmz.IsValidHero(unit) and not jmz.IsSuspiciousIllusion(unit) then
-                count = count + (jmz.IsCore(unit) and 1 or 0.5)
-            elseif ({string.find(name, "upgraded_mega")}) ~= nil then
-                count = count + 0.6
-            elseif ({string.find(name, "upgraded")}) ~= nil then
-                count = count + 0.4
-            elseif ({string.find(name, "siege")}) ~= nil and ({string.find(name, "upgraded")}) == nil then
-                count = count + 0.5
-            elseif ({string.find(name, "warlock_golem")}) ~= nil or ({string.find(name, "lone_druid_bear")}) ~= nil then
-                count = count + 1
-            elseif unit:IsCreep() or unit:IsAncientCreep() or unit:IsDominated() or unit:HasModifier("modifier_chen_holy_persuasion") or unit:HasModifier("modifier_dominated") then
-                count = count + 0.2
+    for ____, unit in ipairs(unitState.enemyUnits) do
+        do
+            local __continue26
+            repeat
+                if jmz.IsValid(unit) and GetUnitToLocationDistance(unit, vLoc) <= nRadius then
+                    local name = unit:GetUnitName()
+                    if jmz.IsValidHero(unit) then
+                        if jmz.IsSuspiciousIllusion(unit) then
+                            __continue26 = true
+                            break
+                        end
+                        count = count + (jmz.IsCore(unit) and 1 or 0.5)
+                    elseif __TS__StringIncludes(name, "upgraded_mega") then
+                        count = count + 0.6
+                    elseif __TS__StringIncludes(name, "upgraded") then
+                        count = count + 0.4
+                    elseif __TS__StringIncludes(name, "siege") and not __TS__StringIncludes(name, "upgraded") then
+                        count = count + 0.5
+                    elseif __TS__StringIncludes(name, "warlock_golem") or __TS__StringIncludes(name, "lone_druid_bear") then
+                        count = count + 1
+                    elseif unit:IsCreep() or unit:IsAncientCreep() or unit:IsDominated() or unit:HasModifier("modifier_chen_holy_persuasion") or unit:HasModifier("modifier_dominated") then
+                        count = count + 0.2
+                    end
+                end
+                __continue26 = true
+            until true
+            if not __continue26 then
+                break
             end
         end
     end
-    count = math.floor(count)
+    count = math.floor(count + 0.000001)
     _cacheEnemyAroundLoc[key] = {t = now, count = count}
     return count
 end
@@ -426,8 +427,8 @@ function GetClosestAllyPos(tPosList, vLocation)
             if jmz.IsValidHero(m) then
                 local p = jmz.GetPosition(m)
                 do
-                    local j = 1
-                    while j <= #tPosList do
+                    local j = 0
+                    while j < #tPosList do
                         if p == tPosList[j + 1] then
                             local d = GetUnitToLocationDistance(m, vLocation)
                             if d < bestDist then
@@ -765,15 +766,15 @@ function ____exports.ShouldDefend(bot, hBuilding, nRadius)
     for ____, unit in ipairs(unitState.enemyCreeps) do
         if jmz.IsValid(unit) and GetUnitToUnitDistance(hBuilding, unit) <= nRadius then
             local name = unit:GetUnitName()
-            if ({string.find(name, "siege")}) ~= nil and ({string.find(name, "upgraded")}) == nil then
+            if __TS__StringIncludes(name, "siege") and not __TS__StringIncludes(name, "upgraded") then
                 creepWeights = creepWeights + 0.5
-            elseif ({string.find(name, "upgraded_mega")}) ~= nil then
+            elseif __TS__StringIncludes(name, "upgraded_mega") then
                 creepWeights = creepWeights + 0.6
-            elseif ({string.find(name, "upgraded")}) ~= nil then
+            elseif __TS__StringIncludes(name, "upgraded") then
                 creepWeights = creepWeights + 0.4
-            elseif ({string.find(name, "warlock_golem")}) ~= nil or ({string.find(name, "shadow_shaman_ward")}) ~= nil then
+            elseif __TS__StringIncludes(name, "warlock_golem") or __TS__StringIncludes(name, "shadow_shaman_ward") then
                 creepWeights = creepWeights + 1
-            elseif ({string.find(name, "lone_druid_bear")}) ~= nil then
+            elseif __TS__StringIncludes(name, "lone_druid_bear") then
                 enemyHeroNearby = enemyHeroNearby + 1
             elseif unit:IsCreep() or unit:IsAncientCreep() or unit:IsDominated() or unit:HasModifier("modifier_chen_holy_persuasion") or unit:HasModifier("modifier_dominated") then
                 creepWeights = creepWeights + 0.2
@@ -894,6 +895,40 @@ function ____exports.GetDefendDesireHelper(bot, lane)
     local ds = getDefendState(bot)
     ds.defendLoc = locationState.laneFronts[lane]
     local distanceToDefendLoc = GetUnitToLocationDistance(bot, ds.defendLoc)
+    local enemiesAtAncient = ancient and jmz.Utils.CountEnemyHeroesNear(
+        ancient:GetLocation(),
+        2200
+    ) or 0
+    local enemiesOnHG = jmz.Utils.CountEnemyHeroesOnHighGround(team)
+    if ancient and (enemiesOnHG >= 2 or jmz.Utils.CountEnemyHeroesNear(
+        ancient:GetLocation(),
+        BASE_THREAT_RADIUS
+    ) >= 1 or WeightedEnemiesAroundLocation(
+        ancient:GetLocation(),
+        BASE_THREAT_RADIUS
+    ) >= 2) then
+        baseThreatUntil = DotaTime() + BASE_THREAT_HOLD
+    end
+    if ancient and IsBaseThreatActive() then
+        ds.defendLoc = jmz.AdjustLocationWithOffsetTowardsFountain(
+            ancient:GetLocation(),
+            300
+        )
+        ds.distanceToLane[lane] = GetUnitToLocationDistance(bot, ds.defendLoc)
+        ds.nInRangeAlly = jmz.GetNearbyHeroes(bot, 1600, false, BotMode.None)
+        ds.nInRangeEnemy = jmz.GetLastSeenEnemiesNearLoc(
+            bot:GetLocation(),
+            1600
+        )
+        ds.weAreStronger = jmz.WeAreStronger(bot, 2500)
+        if lane ~= GetThreatenedLane() then
+            return BotModeDesire.VeryLow
+        end
+        bot.laneToDefend = lane
+        jmz.Utils.GameStates = jmz.Utils.GameStates or ({})
+        jmz.Utils.GameStates.recentDefendTime = DotaTime()
+        return 0.96
+    end
     local botLevel = bot:GetLevel()
     if bot:GetAssignedLane() ~= lane and distanceToDefendLoc > 3000 and (jmz.GetPosition(bot) == 1 and botLevel < 6 or jmz.GetPosition(bot) == 2 and botLevel < 6 or jmz.GetPosition(bot) == 3 and botLevel < 5 or jmz.GetPosition(bot) == 4 and botLevel < 4 or jmz.GetPosition(bot) == 5 and botLevel < 4) then
         return BotModeDesire.None
@@ -937,100 +972,12 @@ function ____exports.GetDefendDesireHelper(bot, lane)
         return BotModeDesire.VeryLow
     end
     local recentlyHit = bot:WasRecentlyDamagedByAnyHero(5) or bot:WasRecentlyDamagedByTower(5)
-    local threatenedLane = GetThreatenedLane()
-    local panic = {active = false, floor = 0}
-    local enemiesAtAncient = ancient and jmz.Utils.CountEnemyHeroesNear(
-        ancient:GetLocation(),
-        2200
-    ) or 0
-    local enemiesOnHG = jmz.Utils.CountEnemyHeroesOnHighGround(gameState.team)
-    if enemiesOnHG >= 2 and not recentlyHit then
-        if lane ~= threatenedLane then
-            return BotModeDesire.VeryLow
-        end
-        baseThreatUntil = DotaTime() + BASE_THREAT_HOLD
-        panic = {
-            active = true,
-            floor = 0.96,
-            forceLoc = ancient and jmz.AdjustLocationWithOffsetTowardsFountain(
-                ancient:GetLocation(),
-                300
-            ) or ds.defendLoc
-        }
-        bot.laneToDefend = lane
-    end
-    if enemiesAtAncient >= 1 then
-        if lane ~= threatenedLane then
-            return BotModeDesire.VeryLow
-        end
-        if ancient then
-            local defenders = jmz.GetAlliesNearLoc(
-                ancient:GetLocation(),
-                1600
-            )
-            local anyThere = __TS__ArraySome(
-                defenders,
-                function(____, a) return jmz.IsValidHero(a) end
-            )
-            if not anyThere then
-                local pos = jmz.GetPosition(bot)
-                local isSupport = pos == 4 or pos == 5
-                local closestSupportPos = GetClosestAllyPos(
-                    {4, 5},
-                    ancient:GetLocation()
-                )
-                if isSupport and pos == closestSupportPos then
-                    panic = {
-                        active = true,
-                        floor = math.max(panic.floor, 0.94),
-                        forceLoc = jmz.AdjustLocationWithOffsetTowardsFountain(
-                            ancient:GetLocation(),
-                            300
-                        )
-                    }
-                    bot.laneToDefend = lane
-                end
-            end
-        end
-    end
-    local isBaseThreatActive = IsBaseThreatActive()
-    if ancient then
-        local heroesNearAncient = jmz.Utils.CountEnemyHeroesNear(
-            ancient:GetLocation(),
-            BASE_THREAT_RADIUS
-        )
-        if heroesNearAncient >= 1 then
-            baseThreatUntil = DotaTime() + BASE_THREAT_HOLD
-        elseif isBaseThreatActive then
-            local creepWeight = WeightedEnemiesAroundLocation(
-                ancient:GetLocation(),
-                BASE_THREAT_RADIUS
-            )
-            if creepWeight >= 2 then
-                baseThreatUntil = DotaTime() + 1.5
-            end
-        end
-    end
-    if panic.active and panic.forceLoc then
-        ds.defendLoc = panic.forceLoc
-    elseif isBaseThreatActive and ancient then
-        ds.defendLoc = jmz.AdjustLocationWithOffsetTowardsFountain(
-            ancient:GetLocation(),
-            300
-        )
-    end
-    if isBaseThreatActive then
-        if lane ~= threatenedLane then
-            return BotModeDesire.VeryLow
-        end
-    else
-        if jmz.Utils.GetLocationToLocationDistance(gameState.teamFountainTpPoint, ds.defendLoc) < 3000 then
-            local enemyLaneFront = locationState.enemyLaneFronts[lane]
-            local eNear = jmz.GetLastSeenEnemiesNearLoc(enemyLaneFront, 1600)
-            local aNear = jmz.GetAlliesNearLoc(enemyLaneFront, 1600)
-            if GetUnitToLocationDistance(bot, enemyLaneFront) > bot:GetAttackRange() and #eNear <= #aNear + 1 then
-                ds.defendLoc = enemyLaneFront
-            end
+    if jmz.Utils.GetLocationToLocationDistance(gameState.teamFountainTpPoint, ds.defendLoc) < 3000 then
+        local enemyLaneFront = locationState.enemyLaneFronts[lane]
+        local eNear = jmz.GetLastSeenEnemiesNearLoc(enemyLaneFront, 1600)
+        local aNear = jmz.GetAlliesNearLoc(enemyLaneFront, 1600)
+        if GetUnitToLocationDistance(bot, enemyLaneFront) > bot:GetAttackRange() and #eNear <= #aNear + 1 then
+            ds.defendLoc = enemyLaneFront
         end
     end
     ds.distanceToLane[lane] = GetUnitToLocationDistance(bot, ds.defendLoc)
@@ -1152,9 +1099,6 @@ function ____exports.GetDefendDesireHelper(bot, lane)
             return BotModeDesire.None
         end
     end
-    if panic.active then
-        nDefendDesire = math.max(nDefendDesire, panic.floor)
-    end
     if pingFloor > 0 then
         nDefendDesire = math.max(nDefendDesire, pingFloor)
     end
@@ -1206,7 +1150,7 @@ CACHE_ENEMY_AROUND_LOC_HZ = 0.35
 CACHE_LASTSEEN_WINDOW = 5
 nTeam = GetTeam()
 _threatLaneSticky = {lane = Lane.Mid, ["until"] = -1}
-baseThreatUntil = -1
+baseThreatUntil = nil
 fTraveBootsDefendTime = 0
 _cacheEnemyAroundLoc = {}
 DEFEND_CACHE_TTL = 0.5

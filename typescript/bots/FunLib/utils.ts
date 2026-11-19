@@ -23,7 +23,8 @@ export const DebugMode = false;
 export const ScriptID = 3246316298;
 
 export const RadiantFountainTpPoint = Vector(-7172, -6652, 384);
-export const DireFountainTpPoint = Vector(6982, 6422, 392);
+// 7.42: Dire fountain moved ~300 units toward the Ancient (was 6982, 6422); estimate, verify in-game
+export const DireFountainTpPoint = Vector(6770, 6210, 392);
 export const RadiantRoshanLoc = Vector(-2984, 2349, 1092);
 export const DireRoshanLoc = Vector(2980, -2816, 1107);
 export const BarrackList: Barracks[] = [Barracks.TopMelee, Barracks.TopRanged, Barracks.MidMelee, Barracks.MidRanged, Barracks.BotMelee, Barracks.BotRanged];
@@ -450,7 +451,7 @@ export function GetCachedVars(key: string, withinTime: number) {
     // Not helpful for now. Disable it.
     // return null;
 
-    if (!GameStates.cachedVars || !GameStates.cachedVars[key]) {
+    if (!GameStates.cachedVars || GameStates.cachedVars[key] == null) {
         return null;
     }
     if (DotaTime() - GameStates.cachedVars[`${key}-Time`] <= withinTime) {
@@ -1239,9 +1240,11 @@ export function IsTeamPushingSecondTierOrHighGround(bot: Unit): boolean {
     }
     const enemyAncient = GetAncient(GetOpposingTeam());
     if (enemyAncient !== null) {
-        for (let playerdId of GetTeamPlayers(bot.GetTeam())) {
-            if (IsHeroAlive(playerdId)) {
-                const teamMember = GetTeamMember(playerdId);
+        const teamPlayers = GetTeamPlayers(bot.GetTeam());
+        for (let index = 0; index < teamPlayers.length; index++) {
+            if (IsHeroAlive(teamPlayers[index])) {
+                // GetTeamMember takes a one-based team slot, not a player ID.
+                const teamMember = GetTeamMember(index + 1);
                 if (
                     teamMember !== null &&
                     teamMember.GetNearbyHeroes(2000, false, BotMode.None).length >= 2 &&

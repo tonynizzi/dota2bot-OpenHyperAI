@@ -382,6 +382,7 @@ end
 
 function X.ConsiderFiendsGate()
     if not FiendsGate:IsFullyCastable()
+    or bot:IsRooted()
     then
         return BOT_ACTION_DESIRE_NONE, 0
     end

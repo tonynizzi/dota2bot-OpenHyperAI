@@ -4,6 +4,12 @@ This document is the single source of truth for understanding, maintaining, and 
 
 Last verified against: **Patch 7.41a** (March 2026)
 
+Targeted maintenance for 7.41f is recorded in [PATCH_REVIEW_2026-09-27.md](PATCH_REVIEW_2026-09-27.md); this is not a full update of the architecture baseline. Optional action instrumentation is documented in [ACTION_DIAGNOSTICS.md](ACTION_DIAGNOSTICS.md).
+
+The combat reaction gate in `FunLib/reaction_delay.lua` is called by the shared ability/item think callbacks. Its settings, behavior, and limits are documented in [REACTION_DELAY.md](REACTION_DELAY.md).
+
+The shared ability callback also drives the local match-start notice in `FunLib/local_update_notice.lua`, using hand-written `FunLib/local_release.lua` metadata. See [LOCAL_UPDATE_NOTICE.md](LOCAL_UPDATE_NOTICE.md) for release text, timing, and the mute switch.
+
 ---
 
 ## Table of Contents
@@ -241,7 +247,7 @@ Neutral items are handled by **two separate systems** depending on the game mode
 
 ### Buff Mode (`Buff/NeutralItems.lua`)
 
-- Defines `Tier1NeutralItems` through `Tier5NeutralItems` arrays
+- Defines `Tier1NeutralItems` through `Tier4NeutralItems` arrays (7.42 reduced neutral tiers from 5 to 4: 0/15/30/50 min)
 - Items are distributed to bots based on game time
 - Simple random selection from the tier pool
 - Includes enhancement items (enchantments) per tier

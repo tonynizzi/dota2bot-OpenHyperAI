@@ -4,6 +4,7 @@ if bot == nil or bot:IsInvulnerable() or not bot:IsHero() or not bot:IsAlive() o
 
 local J = require( GetScriptDirectory()..'/FunLib/jmz_func' )
 local Customize = require( GetScriptDirectory()..'/Customize/general' )
+local RoshanTrace = require( GetScriptDirectory()..'/FunLib/roshan_diagnostics' )
 
 local killTime = 0.0
 local shouldKillRoshan = false
@@ -19,15 +20,26 @@ local roshTimeFlag = false
 local initDPSFlag = false
 
 local Roshan
+local currentDPSCheck
+local baseDangerUntil
 
 function GetDesire()
-	local res = GetDesireHelper()
+	local res, reason = GetDesireHelper()
+	if J.Customize.Enable and J.Customize.RoshanDiagnostics then
+		RoshanTrace.Record(bot, res, reason, J, {
+			aliveEstimate = shouldKillRoshan,
+			dpsLatched = initDPSFlag,
+			dpsCurrent = currentDPSCheck,
+		})
+	end
 	if res > 0.6 then J.ModeAnnounce(bot, 'say_roshan', 30) end
 	return res
 end
 function GetDesireHelper()
-	if bot:IsInvulnerable() or not bot:IsHero() or not bot:IsAlive() or not string.find(botName, "hero") or bot:IsIllusion() then return BOT_MODE_DESIRE_NONE end
-    if Roshan == nil then
+	currentDPSCheck = nil
+	if bot:IsInvulnerable() or not bot:IsHero() or not bot:IsAlive() or not string.find(botName, "hero") or bot:IsIllusion() then return BOT_MODE_DESIRE_NONE, 'ineligible_bot' end
+    if not J.Utils.IsValidUnit(Roshan) then
+        Roshan = nil
         local nCreeps = bot:GetNearbyNeutralCreeps(700)
         for _, creepOrRoshan in pairs(nCreeps)
         do
@@ -40,44 +52,39 @@ function GetDesireHelper()
 
 	-- 如果在打高地 就别撤退去干别的
 	if J.Utils.IsTeamPushingSecondTierOrHighGround(bot) then
-		return BOT_MODE_DESIRE_NONE
+		return BOT_MODE_DESIRE_NONE, 'team_pushing'
 	end
 
-	if J.GetEnemiesAroundAncient(bot, 3200) > 0 or J.GetHP(GetAncient(bot:GetTeam())) < 0.8 then
-		return BOT_MODE_DESIRE_NONE
+    local now = DotaTime()
+    if baseDangerUntil ~= nil and baseDangerUntil > now + 4 then baseDangerUntil = nil end
+    if J.GetEnemiesAroundAncient(bot, 3200) > 0
+    or J.Utils.CountEnemyHeroesOnHighGround(bot:GetTeam()) >= 2 then
+        baseDangerUntil = now + 4
+    end
+    if baseDangerUntil ~= nil and now < baseDangerUntil then
+		return BOT_MODE_DESIRE_NONE, 'ancient_danger_or_damage'
 	end
 
     local timeOfDay = J.CheckTimeOfDay()
 
     local nTeamFightLocation = J.GetTeamFightLocation(bot)
     if nTeamFightLocation ~= nil
+    and GetUnitToLocationDistance(bot, J.GetCurrentRoshanLocation()) < 1600
+    and GetUnitToLocationDistance(bot, nTeamFightLocation) < 2000
     then
-        if timeOfDay == 'day'
-        and GetUnitToLocationDistance(bot, J.Utils.RadiantRoshanLoc) < 1600
-        and GetUnitToLocationDistance(bot, nTeamFightLocation) < 2000
-        then
-            return BOT_ACTION_DESIRE_NONE
-        else
-            if timeOfDay == 'night'
-            and GetUnitToLocationDistance(bot, J.Utils.DireRoshanLoc) < 1600
-            and GetUnitToLocationDistance(bot, nTeamFightLocation) < 2000
-            then
-                return BOT_ACTION_DESIRE_NONE
-            end
-        end
+        return BOT_ACTION_DESIRE_NONE, timeOfDay == 'day'
+            and 'nearby_teamfight_day' or 'nearby_teamfight_night'
     end
 
     local lEnemyHeroesAroundLoc = J.GetLastSeenEnemiesNearLoc(bot:GetLocation(), 1200)
     if #lEnemyHeroesAroundLoc >= 2 then
-        return BOT_ACTION_DESIRE_NONE
+        return BOT_ACTION_DESIRE_NONE, 'recent_enemies_near_bot'
     end
 
-    -- if Roshan is about to get killed, kill it unless there are other absolute actions.
-    if J.Utils.IsValidUnit(Roshan) then
-        local roshHP = Roshan:GetHealth() / Roshan:GetMaxHealth()
-        if roshHP < 0.5 and #lEnemyHeroesAroundLoc == 0 then
-            return RemapValClamped(roshHP, 100, 0, BOT_MODE_DESIRE_MODERATE, BOT_MODE_DESIRE_ABSOLUTE )
-        end
+    local pit = J.GetCurrentRoshanLocation()
+    if #J.GetEnemiesNearLoc(pit, 2500) > 0
+    or #J.GetLastSeenEnemiesNearLoc(pit, 2500) > 0 then
+        return BOT_MODE_DESIRE_NONE, 'enemies_near_pit'
     end
 
     local aliveAlly = J.GetNumOfAliveHeroes(false)
@@ -85,12 +92,13 @@ function GetDesireHelper()
     local hasSameOrMoreHero = aliveAlly >= aliveEnemy
 
     if not hasSameOrMoreHero then
-        return BOT_ACTION_DESIRE_NONE
+        return BOT_ACTION_DESIRE_NONE, 'outnumbered_alive'
     end
 
     local nCoreWithNoEmptySlot = 0
     local aliveHeroesList = {}
-    for _, h in pairs(GetUnitList(UNIT_LIST_ALLIED_HEROES)) do
+    local botCanParticipate = false
+    for _, h in pairs(J.GetRoshanParticipants(GetUnitList(UNIT_LIST_ALLIED_HEROES), pit)) do
         if h:IsAlive()
         then
             if J.Utils.CountBackpackEmptySpace(h) <= 0 and J.IsCore(h) then
@@ -99,11 +107,14 @@ function GetDesireHelper()
 
             -- do not take rosh if the cores do not have any empty slot, it may get dropped on ground.
             if nCoreWithNoEmptySlot >= 2 then
-                return BOT_ACTION_DESIRE_NONE
+                return BOT_ACTION_DESIRE_NONE, 'core_backpacks_full'
             end
             table.insert(aliveHeroesList, h)
+            if h == bot then botCanParticipate = true end
         end
     end
+
+    if not botCanParticipate then return BOT_MODE_DESIRE_NONE, 'participant_unavailable' end
 
     shouldKillRoshan = J.IsRoshanAlive()
 
@@ -120,26 +131,31 @@ function GetDesireHelper()
         end
     end
 
-    if J.HasEnoughDPSForRoshan(aliveHeroesList)
+    currentDPSCheck = J.HasEnoughDPSForRoshan(aliveHeroesList, Roshan)
+    -- Readiness must recover and expire with the current team, not latch forever.
+    initDPSFlag = currentDPSCheck
+    if not initDPSFlag then return BOT_ACTION_DESIRE_NONE, 'dps_not_ready' end
+
+    local nEnemyHeroes = J.GetEnemiesNearLoc(bot:GetLocation(), 1300)
+    if nEnemyHeroes ~= nil and #nEnemyHeroes > 0
     then
-        initDPSFlag = true
+        return BOT_ACTION_DESIRE_NONE, 'visible_enemies_near_bot'
     end
 
     if J.IsRoshanCloseToChangingSides()
     then
         local botTarget = J.GetProperTarget(bot)
         if J.IsRoshan(botTarget) then
-            return RemapValClamped(J.GetHP(botTarget), 1, 0, BOT_ACTION_DESIRE_NONE, BOT_ACTION_DESIRE_VERYHIGH )
+            return RemapValClamped(J.GetHP(botTarget), 1, 0, BOT_ACTION_DESIRE_NONE, BOT_ACTION_DESIRE_VERYHIGH ), 'finish_before_side_change'
         end
         if not J.IsValid(botTarget) or not J.IsRoshan(botTarget) then
-            return BOT_ACTION_DESIRE_NONE
+            return BOT_ACTION_DESIRE_NONE, 'side_change_soon'
         end
     end
 
-    local nEnemyHeroes = J.GetEnemiesNearLoc(bot:GetLocation(), 1300)
-    if nEnemyHeroes ~= nil and #nEnemyHeroes > 0
-    then
-        return BOT_ACTION_DESIRE_NONE
+    if J.IsRoshan(Roshan) and Roshan:GetHealth() / Roshan:GetMaxHealth() < 0.5 then
+        return math.min(0.9, RemapValClamped(Roshan:GetHealth() / Roshan:GetMaxHealth(),
+            1, 0, BOT_MODE_DESIRE_MODERATE, BOT_MODE_DESIRE_ABSOLUTE)), 'finish_low_health_roshan'
     end
 
     if shouldKillRoshan
@@ -153,17 +169,16 @@ function GetDesireHelper()
             and J.GetDistance(humanPing.location, J.GetCurrentRoshanLocation()) < 600
             and DotaTime() < humanPing.time + 5.0
             then
-                return 0.95
+                return 0.9, 'human_ping'
             end
         end
 
         local mul = RemapValClamped(DotaTime(), sinceRoshAliveTime, sinceRoshAliveTime + (2.5 * 60), 1, 2)
         local nRoshanDesire = (GetRoshanDesire() * mul)
 
-        if hasSameOrMoreHero or (not hasSameOrMoreHero and J.HasEnoughDPSForRoshan(aliveHeroesList)) then
-            return Clamp(nRoshanDesire, 0, 0.95)
-        end
+        return Clamp(nRoshanDesire, 0, 0.9), 'engine_desire_scaled'
     end
 
-    return BOT_ACTION_DESIRE_NONE
+    if not shouldKillRoshan then return BOT_ACTION_DESIRE_NONE, 'respawn_estimate_not_ready' end
+    return BOT_ACTION_DESIRE_NONE, 'dps_not_ready'
 end

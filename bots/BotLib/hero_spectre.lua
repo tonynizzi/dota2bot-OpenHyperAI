@@ -564,10 +564,14 @@ function X.ConsiderShadowStep()
 
     ShadowStepDuration = ShadowStep:GetSpecialValueFloat('duration')
     local nTeamFightLocation = J.GetTeamFightLocation(bot)
+    -- 7.41d: Shadow Step cast range is a flat 1000 (was 825-1200)
+    local nCastRange = ShadowStep:GetCastRange()
+    if nCastRange == nil or nCastRange <= 0 then nCastRange = 1000 end
+    nCastRange = nCastRange + 50
 
     if J.IsGoingOnSomeone(bot)
     then
-        local weakestTarget = J.GetVulnerableWeakestUnit(bot, true, true, 1600)
+        local weakestTarget = J.GetVulnerableWeakestUnit(bot, true, true, nCastRange)
 
         if J.IsValidTarget(weakestTarget)
         and GetUnitToUnitDistance(bot, weakestTarget) > 600
@@ -589,7 +593,7 @@ function X.ConsiderShadowStep()
     end
 
     if nTeamFightLocation ~= nil
-    and GetUnitToLocationDistance(bot, nTeamFightLocation) > 1600
+    and GetUnitToLocationDistance(bot, nTeamFightLocation) > nCastRange
     and bot:GetLevel() >= 6
     and bot:GetNetWorth() > 5000
     and not J.IsRetreating(bot)
@@ -602,6 +606,7 @@ function X.ConsiderShadowStep()
         for _, enemyHero in pairs(nEnemyHeroes)
         do
             if J.IsValidHero(enemyHero)
+            and J.IsInRange(bot, enemyHero, nCastRange)
             and not J.IsSuspiciousIllusion(enemyHero)
             and not J.IsLocationInChrono(enemyHero:GetLocation())
             and not J.IsLocationInBlackHole(enemyHero:GetLocation())
