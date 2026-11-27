@@ -76,7 +76,8 @@ function print(...)
     local first = select(1, ...)
     local isRoshanTrace = type(first) == 'string' and string.sub(first, 1, 13) == '[OHA_ROSHAN] '
     local isCastTrace = type(first) == 'string' and string.sub(first, 1, 11) == '[OHA_CAST] '
-    if not Utils.DebugMode and not isRoshanTrace and not isCastTrace then return end
+    local isWatcherTrace = type(first) == 'string' and string.sub(first, 1, 14) == '[OHA_WATCHER] '
+    if not Utils.DebugMode and not isRoshanTrace and not isCastTrace and not isWatcherTrace then return end
 
     local args = {...}
     for i, v in ipairs(args) do
