@@ -151,6 +151,21 @@ class LocalUpdateNoticeTests(unittest.TestCase):
             assert(#messages==4)
         ''')
 
+    def test_changelog_newest_entry_is_announced_and_history_is_ordered(self):
+        lua = self.runtime()
+        release = lua.globals().Release
+        history = [release['history'][i] for i in range(1, len(release['history']) + 1)]
+        self.assertGreaterEqual(len(history), 1)
+        self.assertEqual(release['revision'], history[0]['revision'])
+        self.assertEqual(release['changes'], history[0]['changes'])
+        keys = []
+        for entry in history:
+            revision, changes = entry['revision'], entry['changes']
+            self.assertRegex(revision, r'^\d{4}\.\d{2}\.\d{2}\.\d+$')
+            self.assertTrue(changes and len(changes) <= 120, changes)
+            keys.append(tuple(int(part) for part in revision.split('.')))
+        self.assertEqual(keys, sorted(set(keys), reverse=True), 'history must be newest first, no duplicates')
+
     def test_production_hook_runs_even_while_reaction_gate_is_waiting(self):
         lua = self.runtime()
         lua.execute('''

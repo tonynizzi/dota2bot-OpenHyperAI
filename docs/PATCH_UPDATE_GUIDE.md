@@ -444,7 +444,7 @@ See `docs/ARCHITECTURE.md` Section 13 for the complete mapping table.
 
 Before committing:
 
-For a local release, update the revision and concise summary in `bots/FunLib/local_release.lua` so the next match's chat notice identifies the installed changes. Keep the upstream Workshop version separate. See [LOCAL_UPDATE_NOTICE.md](LOCAL_UPDATE_NOTICE.md).
+For a local release, add a new entry at the top of the `history` changelog in `bots/FunLib/local_release.lua` so the next match's chat notice identifies the installed changes. Keep the upstream Workshop version separate. See [LOCAL_UPDATE_NOTICE.md](LOCAL_UPDATE_NOTICE.md).
 
 **Items:**
 - [ ] `grep` for any remaining references to removed items

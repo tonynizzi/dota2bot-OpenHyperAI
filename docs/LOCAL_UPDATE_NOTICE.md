@@ -3,7 +3,7 @@
 The local fork announces its installed revision and recent changes in all-chat near match start. With the current defaults:
 
 ```text
-[OHA Local 2026.09.27.1] Updates: Treant/Bounty fixes, safer ward use, and Roshan reliability.
+[OHA Local 2026.11.26.1] Updates: Patch 7.42 update; bots no longer freeze at Watchers while jungle farming.
 [OHA Local] Spell/item reaction delay: 150-300 ms. Cast diagnostics: off.
 ```
 
@@ -31,10 +31,21 @@ The default is enabled. Older override files with no `LocalUpdateNotice` field a
 
 ## Updating the message
 
-Edit `bots/FunLib/local_release.lua` when shipping a local update:
+`bots/FunLib/local_release.lua` holds the local changelog. Bots announce its newest entry. When shipping a local update, add a new entry at the **top** of `history` and keep the older entries:
 
-- Increment `revision` (currently `2026.09.27.1`). It identifies the installed local release metadata, not the installed game patch or an automatically computed Git hash.
-- Replace `changes` with a concise summary. Keep the entire first chat line under 256 characters; the regression test checks the shipped message length.
+```lua
+local history = {
+    { revision = '2026.12.03.1', changes = 'Short summary of what changed.' },
+    { revision = '2026.11.26.1', changes = 'Patch 7.42 update; bots no longer freeze at Watchers while jungle farming.' },
+    ...
+}
+```
+
+- `revision` is `YYYY.MM.DD.N`, where `N` counts releases on the same day. It identifies the installed local release, not the game patch or a Git hash.
+- `changes` is one short sentence (120 characters at most).
+- The regression tests check the format, newest-first order, no duplicate revisions, and that the whole chat line stays under 256 characters.
+
+Bump it in the same commit as the change it describes, so whichever build is installed announces itself correctly.
 
 These files are hand-written Lua and have no generated TypeScript counterpart. The upstream Workshop version and welcome messages remain as configured by upstream. This local notice makes no online requests and does not check for newer releases. It also cannot prove that every file in a partially copied installation matches the metadata.
 
