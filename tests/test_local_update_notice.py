@@ -170,6 +170,7 @@ class LocalUpdateNoticeTests(unittest.TestCase):
         lua = self.runtime()
         lua.execute('''
             bot=current; J={Customize=config}; LocalUpdateNotice=Notice
+            HighFiveChat={Think=function() end}
             ReactionDelay={ShouldWait=function() return true end}
             function RefreshBotHandle() return false end
         ''')

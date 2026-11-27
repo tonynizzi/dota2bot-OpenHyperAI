@@ -180,6 +180,7 @@ class ReactionDelayTests(unittest.TestCase):
             now=50; bot.frameProcessTime=0.1
             function bot:IsInvulnerable() return false end
             function RefreshBotHandle() return false end
+            HighFiveChat={Think=function() end}
             function J.IsNoItemIllution() return false end
             function J.IsNoAbilityIllution() return false end
             abilityCalls=0; itemCalls=0; currentTarget='old'; BotBuild={}

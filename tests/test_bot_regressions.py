@@ -237,7 +237,8 @@ class BotRegressions(unittest.TestCase):
                      "bots/FunLib/aba_global_overrides.lua", "bots/BotLib/hero_lion.lua",
                      "bots/BotLib/hero_bristleback.lua", "bots/BotLib/hero_treant.lua",
                      "bots/BotLib/hero_bounty_hunter.lua", "bots/ability_item_usage_generic.lua",
-                     "bots/mode_watcher_generic.lua", "bots/mode_farm_generic.lua"]:
+                     "bots/mode_watcher_generic.lua", "bots/mode_farm_generic.lua",
+                     "bots/FunLib/high_five_chat.lua"]:
             ok, error = compile_lua(source(path))
             self.assertTrue(ok, f"{path}: {error}")
 

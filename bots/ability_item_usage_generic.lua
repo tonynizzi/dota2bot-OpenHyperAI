@@ -11,6 +11,7 @@ local J = require( GetScriptDirectory()..'/FunLib/jmz_func' )
 local Utils = require( GetScriptDirectory()..'/FunLib/utils' )
 local ReactionDelay = require(GetScriptDirectory()..'/FunLib/reaction_delay')
 local LocalUpdateNotice = require(GetScriptDirectory()..'/FunLib/local_update_notice')
+local HighFiveChat = require(GetScriptDirectory()..'/FunLib/high_five_chat')
 local BotBuild = dofile( GetScriptDirectory().."/BotLib/"..string.gsub( botName, "npc_dota_", "" ) )
 local Localization = require( GetScriptDirectory()..'/FunLib/localization' )
 local Customize = require(GetScriptDirectory()..'/Customize/general')
@@ -8420,6 +8421,7 @@ end
 function AbilityUsageThink()
 	if RefreshBotHandle() then return end
 	LocalUpdateNotice.Think(bot, J.Customize)
+	HighFiveChat.Think(bot)
 	if bot.lastAbilityFrameProcessTime == nil then bot.lastAbilityFrameProcessTime = DotaTime() end
 	if ReactionDelay.ShouldWait(bot, J.Customize) then return end
 	if bot:IsInvulnerable() or not bot:IsHero() or not bot:IsAlive() or not string.find(botName, "hero") or bot:IsIllusion() then return end
