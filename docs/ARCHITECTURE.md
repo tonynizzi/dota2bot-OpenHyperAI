@@ -330,7 +330,8 @@ Located in `mode_*_generic.lua` files:
 | `mode_roshan_generic.lua`    | Roshan hunt                    |
 | `mode_rune_generic.lua`      | Rune pickup                    |
 | `mode_ward_generic.lua`      | Ward placement                 |
-| `mode_outpost_generic.lua`   | Outpost control + Watcher vision capture (`ability_lamp_use`, see `docs/WATCHER_CAPTURE.md`) |
+| `mode_outpost_generic.lua`   | Outpost control                |
+| `mode_watcher_generic.lua`   | Watcher vision capture; overrides engine `BOT_MODE_WATCHER` (28), see `docs/WATCHER_CAPTURE.md` |
 
 These files generally don't need updating for item/ability patches, only for game mechanic changes (e.g., timing changes, map changes).
 

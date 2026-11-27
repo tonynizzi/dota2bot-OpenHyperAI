@@ -1,4 +1,4 @@
-"""Watcher capture in BOT_MODE_OUTPOST, run against the shipped mode file with engine mocks."""
+"""Watcher capture in the BOT_MODE_WATCHER override, run against the shipped mode file with engine mocks."""
 import unittest
 from test_bot_regressions import LuaRuntime, ROOT, function, source
 
@@ -9,7 +9,7 @@ function DotaTime() return now end
 BOT_MODE_DESIRE_NONE = 0; BOT_ACTION_DESIRE_NONE = 0
 BOT_ACTION_DESIRE_VERYLOW = 0.1; BOT_ACTION_DESIRE_LOW = 0.25
 BOT_ACTION_DESIRE_MODERATE = 0.5; BOT_ACTION_DESIRE_HIGH = 0.75
-BOT_MODE_DESIRE_MODERATE = 0.5; BOT_MODE_DESIRE_HIGH = 0.75
+BOT_MODE_DESIRE_LOW = 0.25; BOT_MODE_DESIRE_MODERATE = 0.5; BOT_MODE_DESIRE_HIGH = 0.75
 BOT_MODE_DEFEND_ALLY = 99; BOT_MODE_NONE = 0
 TOWER_TOP_2, TOWER_MID_2, TOWER_BOT_2 = 3, 4, 5
 UNIT_LIST_ALL = 1
@@ -42,6 +42,7 @@ function Unit:IsAlive() return true end
 function Unit:IsInvulnerable() return self.invuln or false end
 function Unit:IsAttackImmune() return self.attackImmune or false end
 function Unit:IsIllusion() return false end
+function Unit:HasModifier() return false end
 function unit(t) return setmetatable(t, Unit) end
 
 lamp = {name='ability_lamp_use'}
@@ -109,7 +110,7 @@ class WatcherCapture(unittest.TestCase):
         self.lua.execute(MOCKS)
 
     def load(self):
-        self.lua.execute(source("bots/mode_outpost_generic.lua"))
+        self.lua.execute(source("bots/mode_watcher_generic.lua"))
 
     def run_lua(self, code):
         self.lua.execute(code)
@@ -190,6 +191,7 @@ class WatcherCapture(unittest.TestCase):
         self.assertEqual(len(lines), 1, lines)
         self.assertTrue(lines[0].startswith("[OHA_WATCHER] "))
         self.assertIn("name=npc_dota_lantern team=4 invuln=true attackImmune=true matched=true", lines[0])
+        self.assertIn("stateMod=false buffMod=false", lines[0])
 
     def test_watcher_trace_survives_global_print_filter(self):
         lua = LuaRuntime(unpack_returned_tuples=True)
@@ -198,6 +200,16 @@ class WatcherCapture(unittest.TestCase):
         lua.execute(function('bots/FunLib/aba_global_overrides.lua', 'print'))
         lua.execute("print('ordinary'); print('[OHA_WATCHER] t=1'); "
                     "assert(#output==1 and output[1]=='[OHA_WATCHER] t=1')")
+
+    def test_engine_watcher_mode_is_overridden_and_outpost_mode_untouched(self):
+        # The engine loads mode_<name>_generic.lua for BOT_MODE_WATCHER (mode 28); without it the
+        # built-in dota_bot_mode_watcher behaviour runs and bots stand next to Watchers.
+        watcher = source("bots/mode_watcher_generic.lua")
+        for hook in ("function GetDesire()", "function Think()", "function OnEnd()"):
+            self.assertIn(hook, watcher)
+        outpost = source("bots/mode_outpost_generic.lua")
+        self.assertNotIn("ability_lamp_use", outpost)
+        self.assertIn("ability_capture", outpost)
 
     def test_farm_mode_still_filters_watchers(self):
         lua = LuaRuntime(unpack_returned_tuples=True)
