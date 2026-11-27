@@ -3,7 +3,7 @@
 The local fork announces its installed revision and recent changes in all-chat near match start. With the current defaults:
 
 ```text
-[OHA Local 2026.11.26.1] Updates: Patch 7.42 update; bots no longer freeze at Watchers while jungle farming.
+[OHA Local 2026.11.27.1] Updates: Bots no longer stand staring at Watchers; supports light nearby Watchers for vision when safe.
 [OHA Local] Spell/item reaction delay: 150-300 ms. Cast diagnostics: off.
 ```
 
