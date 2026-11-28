@@ -514,7 +514,8 @@ function X.ConsiderRockThrow()
     local nRadius = RockThrow:GetSpecialValueInt('impact_radius')
     local nMaxTime = RockThrow:GetSpecialValueFloat('max_travel_time')
     local nMinDistance = RockThrow:GetSpecialValueInt('min_range')
-    local nDamage = RockThrow:GetSpecialValueInt('base_damage')
+    -- 7.42: base_damage + damage_str_pct% of Strength
+    local nDamage = RockThrow:GetSpecialValueInt('base_damage') + bot:GetAttributeValue(ATTRIBUTE_STRENGTH) * RockThrow:GetSpecialValueInt('damage_str_pct') / 100
 
     for _, enemyHero in pairs(nEnemyHeroes)
     do

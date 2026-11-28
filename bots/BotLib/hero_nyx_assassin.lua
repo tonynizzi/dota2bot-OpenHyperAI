@@ -194,7 +194,7 @@ function X.ConsiderImpale()
 
     local nCastRange = J.GetProperCastRange(false, bot, Impale:GetCastRange())
     local nCastPoint = Impale:GetCastPoint()
-    local nStunDuration = Impale:GetSpecialValueInt('duration')
+    local nStunDuration = Impale:GetSpecialValueFloat('duration')
     local nDamage = Impale:GetSpecialValueInt('impale_damage')
     local botTarget = J.GetProperTarget(bot)
 

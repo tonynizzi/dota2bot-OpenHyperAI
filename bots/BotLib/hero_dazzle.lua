@@ -178,7 +178,6 @@ local NothlProjectionEnd = bot:GetAbilityByName("dazzle_nothl_projection_end")
 
 local talent3 = bot:GetAbilityByName( sTalentList[3] )
 local talent4 = bot:GetAbilityByName( sTalentList[4] )
-local talent6 = bot:GetAbilityByName( sTalentList[6] )
 
 local castQDesire, castQTarget
 local castWDesire, castWTarget
@@ -385,8 +384,6 @@ function X.ConsiderQ()
 	local nCastPoint = abilityQ:GetCastPoint()
 	local nManaCost = abilityQ:GetManaCost()
 	local nPerDamage = abilityQ:GetSpecialValueInt( "damage" )
-
-	if talent6:IsTrained() then nPerDamage = nPerDamage + talent6:GetSpecialValueInt( "value" ) end
 
 	local nDuration = abilityQ:GetSpecialValueInt( "duration" )
 

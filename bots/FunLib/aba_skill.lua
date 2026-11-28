@@ -209,37 +209,29 @@ function X.GetSkillList( sAbilityList, nAbilityBuildList, sTalentList, nTalentBu
 	end
 	if botName == 'npc_dota_hero_invoker'
 	then
-		sSkillList = {
-						[1] = sAbilityList[nAbilityBuildList[1]],
-						[2] = sAbilityList[nAbilityBuildList[2]],
-						[3] = sAbilityList[nAbilityBuildList[3]],
-						[4] = sAbilityList[nAbilityBuildList[4]],
-						[5] = sAbilityList[nAbilityBuildList[5]],
-						[6] = sAbilityList[nAbilityBuildList[6]],
-						[7] = sAbilityList[nAbilityBuildList[7]],
-						[8] = sAbilityList[nAbilityBuildList[8]],
-						[9] = sAbilityList[nAbilityBuildList[9]],
-						[10] = sTalentList[nTalentBuildList[1]],
-						[11] = sAbilityList[nAbilityBuildList[10]],
-						[12] = sAbilityList[nAbilityBuildList[11]],
-						[13] = sAbilityList[nAbilityBuildList[12]],
-						[14] = sAbilityList[nAbilityBuildList[13]],
-						[15] = sTalentList[nTalentBuildList[2]],
-						[16] = sAbilityList[nAbilityBuildList[14]],
-						[17] = sAbilityList[nAbilityBuildList[15]],
-						[18] = sAbilityList[nAbilityBuildList[16]],
-						[19] = sAbilityList[nAbilityBuildList[17]],
-						[20] = sTalentList[nTalentBuildList[3]],
-						[21] = sAbilityList[nAbilityBuildList[18]],
-						[22] = sAbilityList[nAbilityBuildList[19]],
-						[23] = sAbilityList[nAbilityBuildList[20]],
-						[24] = sAbilityList[nAbilityBuildList[21]],
-						[25] = sTalentList[nTalentBuildList[4]],
-						[26] = sTalentList[nTalentBuildList[5]],
-						[27] = sTalentList[nTalentBuildList[6]],
-						[28] = sTalentList[nTalentBuildList[7]],
-						[29] = sTalentList[nTalentBuildList[8]],
-					}
+		-- 7.42: orbs go to level 8 and Invoke grants a bonus ability point at levels 6, 12
+		-- and 18, so Invoker spends 24 orb points. Entries 22-24 (when the build provides
+		-- them) are learned before the level-25 talent; the list is consumed head-first.
+		local tOrder = {
+			'a1','a2','a3','a4','a5','a6','a7','a8','a9','t1',
+			'a10','a11','a12','a13','t2',
+			'a14','a15','a16','a17','t3',
+			'a18','a19','a20','a21','a22','a23','a24',
+			't4','t5','t6','t7','t8',
+		}
+		sSkillList = {}
+		for _, sKey in ipairs( tOrder )
+		do
+			local nIdx = tonumber( string.sub( sKey, 2 ) )
+			local sName = nil
+			if string.sub( sKey, 1, 1 ) == 'a'
+			then
+				sName = nAbilityBuildList[nIdx] ~= nil and sAbilityList[nAbilityBuildList[nIdx]] or nil
+			else
+				sName = sTalentList[nTalentBuildList[nIdx]]
+			end
+			if sName ~= nil then table.insert( sSkillList, sName ) end
+		end
 	end
 
 	-- print("Aba list for: "..botName)

@@ -23,6 +23,29 @@ local Customize = { }
 -- Set it to true to turn on ALL of the custom settings in this file, or set it to false to turn off the settings.
 Customize.Enable = true
 
+-- Developer diagnostics: sampled Roshan decisions in the console/log, never chat.
+-- See docs/ROSHAN_DECISIONS.md. Leave false during normal play.
+Customize.RoshanDiagnostics = true
+
+-- Sample cast attempts (console/log only). Includes suspect target types and item slots.
+-- See docs/ACTION_DIAGNOSTICS.md. Enable for a short diagnostic playtest.
+Customize.ActionDiagnostics = false
+-- Enter the installed game patch when testing; the bot API cannot detect it reliably.
+Customize.DiagnosticsGamePatch = 'unknown'
+
+-- Pause new spell/item decisions briefly when a new combat cue is observed.
+-- Existing movement, attacks, channels, and queued orders keep running.
+-- Seconds; see docs/REACTION_DELAY.md. Missing settings in older overrides disable it.
+Customize.ReactionDelay = {
+    Enable = true,
+    MinSeconds = 0.15,
+    MaxSeconds = 0.30,
+}
+
+-- One bot announces the installed local revision, changes, and settings in all-chat.
+-- Set false to mute the local notice. Independent of upstream welcome/trash talk.
+Customize.LocalUpdateNotice = true
+
 -- Set the localization code to make bots speak the specific language when possible (not guaranteed to 100% localized). 
 -- Currently supprot: "en" for "English", "zh" for "中文", "ru" for Russian, "ja" for Japanese
 -- https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes

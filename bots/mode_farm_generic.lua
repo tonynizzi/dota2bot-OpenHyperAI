@@ -317,7 +317,7 @@ function GetDesireHelper()
 	   or (bot:GetLevel() >= 23 and nAlliesCount >= 3)
 	   or GetRoshanDesire() > BOT_MODE_DESIRE_VERYHIGH
 	then
-		local nNeutrals = bot:GetNearbyNeutralCreeps( bot:GetAttackRange() ); 
+		local nNeutrals = X.FilterAttackable(bot:GetNearbyNeutralCreeps( bot:GetAttackRange() ));
 		if #nNeutrals == 0 
 		then 
 		    teamTime = DotaTime();
@@ -335,7 +335,7 @@ function GetDesireHelper()
 		local vDefendLocation  = GetLaneFrontLocation(GetTeam(), nDefendLane, -600)
 		local nDefendAllies = J.GetAlliesNearLoc(vDefendLocation, 2200)
 
-		local nNeutrals = bot:GetNearbyNeutralCreeps(Min(bot:GetAttackRange(), 1600))
+		local nNeutrals = X.FilterAttackable(bot:GetNearbyNeutralCreeps(Min(bot:GetAttackRange(), 1600)))
 
 		if #nNeutrals == 0 and #nDefendAllies >= 2 and (not beVeryHighFarmer or bot:GetLevel() >= 15 or J.IsLateGame()) then
 		    teamTime = DotaTime()
@@ -554,7 +554,7 @@ function Think()
 		local farmTarget = J.Site.GetFarmLaneTarget(hLaneCreepList);
 		local nSearchRange = bot:GetAttackRange() + 180
 		if nSearchRange > 1600 then nSearchRange = 1600 end
-		local nNeutrals = bot:GetNearbyNeutralCreeps(nSearchRange);
+		local nNeutrals = X.FilterAttackable(bot:GetNearbyNeutralCreeps(nSearchRange));
 		if J.IsValid(farmTarget) and #nNeutrals == 0 then
 			if farmTarget:GetTeam() ~= bot:GetTeam() then
 				local nEnemyTowers = bot:GetNearbyTowers(1600, true)
@@ -605,7 +605,9 @@ function Think()
 	if preferedCamp ~= nil then
 		local targetFarmLoc = preferedCamp.cattr.location;
 		local cDist = GetUnitToLocationDistance(bot, targetFarmLoc);
-		local nNeutrals = bot:GetNearbyCreeps(900, true);
+		-- Filter out units that can never be attacked (e.g. Watchers), otherwise the
+		-- fallback below issues an attack that never lands and the bot stands staring.
+		local nNeutrals = X.FilterAttackable(bot:GetNearbyCreeps(900, true));
 
 		-- Don't steal farm from an ally already at this camp
 		local nAllyNearCamp = J.GetAlliesNearLoc(targetFarmLoc, 800)
@@ -625,7 +627,7 @@ function Think()
 			if preferedCamp == nil then return end
 			targetFarmLoc = preferedCamp.cattr.location
 			cDist = GetUnitToLocationDistance(bot, targetFarmLoc)
-			nNeutrals = bot:GetNearbyCreeps(900, true)
+			nNeutrals = X.FilterAttackable(bot:GetNearbyCreeps(900, true))
 		end
 
 		if #nNeutrals >= 3 and cDist <= 600 and cDist > 240
@@ -676,7 +678,7 @@ function Think()
 				bot:Action_MoveToLocation(targetFarmLoc);
 				return;
 		else
-			local neutralCreeps = bot:GetNearbyCreeps(1000, true); 
+			local neutralCreeps = X.FilterAttackable(bot:GetNearbyCreeps(1000, true));
 			
 			if #neutralCreeps >= 2 then
 
@@ -723,6 +725,25 @@ function Think()
 	
 	bot:Action_MoveToLocation( ( RB + DB )/2 );
 	return;
+end
+
+-- Drop units that can't be attacked (Watchers, invulnerable/attack-immune units)
+-- so they are neither counted as camp creeps nor picked as farm targets.
+function X.FilterAttackable( unitList )
+	local result = {}
+	if unitList == nil then return result end
+	for _, unit in pairs(unitList) do
+		if unit ~= nil
+		and not unit:IsNull()
+		and unit:IsAlive()
+		and unit:CanBeSeen()
+		and not unit:IsInvulnerable()
+		and not unit:IsAttackImmune()
+		then
+			table.insert(result, unit)
+		end
+	end
+	return result
 end
 
 function X.IsNearLaneFront( bot )

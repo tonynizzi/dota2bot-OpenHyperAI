@@ -211,7 +211,6 @@ local abilityE = bot:GetAbilityByName( sAbilityList[3] )
 local abilityR = bot:GetAbilityByName( sAbilityList[6] )
 local FlameCloak = bot:GetAbilityByName( 'lina_flame_cloak' )
 local talent2 = bot:GetAbilityByName( sTalentList[2] )
-local talent4 = bot:GetAbilityByName( sTalentList[4] )
 local talent7 = bot:GetAbilityByName( sTalentList[7] )
 
 local castQDesire, castQLocation
@@ -222,7 +221,6 @@ local FlameCloakDesire
 
 local nKeepMana, nMP, nHP, nLV, hEnemyList, hAllyList, botTarget, sMotive
 local aetherRange = 0
-local talent4Damage = 0
 
 
 
@@ -234,7 +232,6 @@ function X.SkillsComplement()
 
 	nKeepMana = 400
 	aetherRange = 0
-	talent4Damage = 0
 	nLV = bot:GetLevel()
 	nMP = bot:GetMana()/bot:GetMaxMana()
 	nHP = bot:GetHealth()/bot:GetMaxHealth()
@@ -247,7 +244,6 @@ function X.SkillsComplement()
 	local aether = J.IsItemAvailable( "item_aether_lens" )
 	if aether ~= nil then aetherRange = 250 end
 --	if talent2:IsTrained() then aetherRange = aetherRange + talent2:GetSpecialValueInt( "value" ) end
-	if talent4:IsTrained() then talent4Damage = talent4Damage + talent4:GetSpecialValueInt( "value" ) end
 
 	FlameCloakDesire = X.ConsiderFlameCloak()
 	if (FlameCloakDesire > 0)
@@ -514,7 +510,7 @@ function X.ConsiderW()
 	local nCastRange = abilityW:GetCastRange() + aetherRange
 	local nCastPoint = abilityW:GetCastPoint() + 0.5
 	local nManaCost = abilityW:GetManaCost()
-	local nDamage = abilityW:GetSpecialValueInt( 'light_strike_array_damage' ) + talent4Damage
+	local nDamage = abilityW:GetSpecialValueInt( 'light_strike_array_damage' )
 	local nDamageType = DAMAGE_TYPE_MAGICAL
 	local nRadius 	 = abilityW:GetSpecialValueInt( "light_strike_array_aoe" )
 

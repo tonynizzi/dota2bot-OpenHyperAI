@@ -2,7 +2,11 @@
 
 This is a step-by-step runbook for quickly updating the bot scripts when Valve releases a new Dota 2 patch. Designed to be followed by a developer or AI assistant without needing to re-read the entire codebase.
 
-**Last updated for:** Patch 7.41a (March 2026)
+**Last updated for:** Patch 7.42 (November 2026): P0/P1 compatibility pass, see [PATCH_REVIEW_2026-11-18.md](PATCH_REVIEW_2026-11-18.md). New 7.42 abilities and items listed there as P2 are not yet used by the bots, and nothing in that pass has been verified in-game.
+
+**Previous baseline:** Patch 7.41a (March 2026)
+
+**Targeted follow-up:** [September 27, 2026 maintenance for 7.41f](PATCH_REVIEW_2026-09-27.md) repairs Treant targeting, Bounty Hunter's talent-slot assumption, and Roshan reliability, and adds optional cast diagnostics. The older baseline above is not a claim that 7.41b–f have received a complete compatibility audit.
 
 ---
 
@@ -39,7 +43,7 @@ Then fetch the patch notes from:
 
 Categorize all changes into:
 1. STRUCTURAL (renames, new/removed abilities, targeting changes, new/removed items) → need code changes
-2. NUMBER-ONLY (damage/cooldown/duration/cost tweaks) → game API handles automatically, no code changes needed
+2. NUMBER-ONLY (damage/cooldown/duration/cost tweaks) → live API reads usually adapt; inspect hardcoded formulas, thresholds, special-value keys, and manual talent additions
 3. TALENT SWAPS (talents moved between levels) → check hero tTalentTreeList preferences
 
 Then apply the STRUCTURAL changes following the phase-by-phase guide.
@@ -53,7 +57,7 @@ For TALENT SWAPS, check BotLib/hero_*.lua talent preferences and swap if needed.
   - Talent swaps between levels (check `tTalentTreeList`)
   - Ability behavior changes (rare but possible)
   - Item active behavior changes (rare but possible)
-  - Number changes are handled automatically by the game API
+  - Live API reads usually absorb numerical changes; hardcoded estimates and manual talent bonuses still require review. Verify whether a special already includes its talent before adding a separate bonus.
 
 ---
 
@@ -357,7 +361,7 @@ end
 ```
 
 Examples from 7.41:
-- Bloodstone: Blood Pact active removed → passive aura only
+- Bloodstone: do not infer active removal from a rework summary; verify patch-matched item behavior before changing the active handler (see Phase 3I).
 - Refresher Orb: still has active but no longer refreshes items (logic OK but add warning comment)
 
 ### 4D. Add Active-Use Logic (`bots/ability_item_usage_generic.lua`)
@@ -440,6 +444,8 @@ See `docs/ARCHITECTURE.md` Section 13 for the complete mapping table.
 
 Before committing:
 
+For a local release, add a new entry at the top of the `history` changelog in `bots/FunLib/local_release.lua` so the next match's chat notice identifies the installed changes. Keep the upstream Workshop version separate. See [LOCAL_UPDATE_NOTICE.md](LOCAL_UPDATE_NOTICE.md).
+
 **Items:**
 - [ ] `grep` for any remaining references to removed items
 - [ ] Every new item in `sTopItems` has a `GetItemComponents` entry
@@ -483,7 +489,7 @@ When uncertain, use dynamic `sAbilityList[N]` references with name fallback chai
 
 Things we missed on the first pass and had to fix later:
 1. **Ability targeting changes** (Bloodrage self-only, Empower can't self-target) -- we only scanned for renames/innates, not behavior changes
-2. **Existing item active logic for changed items** (Bloodstone active removed) -- we added new items but didn't audit old ConsiderItemDesire functions
+2. **Existing item active logic for changed items** -- we added new items but didn't audit old ConsiderItemDesire functions; distinguish reworked actives from removed actives (see Phase 3I).
 3. **New abilities replacing old slots** (OD's Objurgation) -- we checked some heroes but not all
 4. **Special skill progression** (Meepo ult levels) -- we didn't check non-standard heroes
-5. **Patch note inaccuracy** -- issue #129's AI-generated list had wrong info (Lina/Sven innates, "Snakebite", "Reprimand" name). Always verify on Liquipedia.
+5. **Patch note inaccuracy** -- issue #129's AI-generated list had wrong info (Lina/Sven innates, "Snakebite", "Reprimand" name). Always verify on Liquipedia. (Correction, 7.42 review: `venomancer_snakebite` does exist in Valve's current hero data alongside Venomous Gale, so that particular item may not have been an error.)

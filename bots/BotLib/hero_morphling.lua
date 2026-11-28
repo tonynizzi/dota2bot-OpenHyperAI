@@ -57,7 +57,7 @@ sRoleItemsBuyList['pos_1'] = {
     "item_power_treads",
     "item_lifesteal",
     "item_manta",--
-    "item_angels_demise",--
+    "item_skadi",--
     "item_black_king_bar",--
     "item_butterfly",--
     "item_aghanims_shard",
@@ -71,7 +71,7 @@ sRoleItemsBuyList['pos_2'] = {
 	"item_mid_outfit",
     "item_lifesteal",
     "item_manta",--
-    "item_angels_demise",--
+    "item_greater_crit",--
     "item_black_king_bar",--
     sItems,--
     "item_aghanims_shard",

@@ -930,7 +930,8 @@ function X.ConsiderCrystalClone()
 		return BOT_ACTION_DESIRE_NONE
 	end
 
-	local nRadius = 450
+	local nRadius = CrystalClone:GetSpecialValueInt('frostbite_radius')
+	if nRadius == nil or nRadius <= 0 then nRadius = 425 end
 	local botTarget = J.GetProperTarget(bot)
 
 	if J.IsGoingOnSomeone(bot)

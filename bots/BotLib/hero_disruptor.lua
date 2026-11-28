@@ -504,7 +504,7 @@ function X.ConsiderKineticFence()
     local nCastRange = J.GetProperCastRange(false, bot, KineticFence:GetCastRange())
 	local nCastPoint = KineticFence:GetCastPoint()
 	local nRadius = KineticFence:GetSpecialValueInt('radius')
-    local nDelay = KineticFence:GetSpecialValueInt('formation_time')
+    local nDelay = KineticFence:GetSpecialValueFloat('formation_time')
 
 	local nEnemyHeroes = bot:GetNearbyHeroes(1600, true, BOT_MODE_NONE)
 

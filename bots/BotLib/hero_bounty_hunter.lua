@@ -64,7 +64,7 @@ sRoleItemsBuyList['pos_1'] = {
 	"item_ultimate_scepter",
 	"item_octarine_core",--
 	"item_black_king_bar",--
-	"item_angels_demise",--
+	"item_caduceus",--
 	"item_assault",--
 	"item_travel_boots",
 	"item_monkey_king_bar",--
@@ -87,7 +87,7 @@ sRoleItemsBuyList['pos_2'] = {
 	"item_ultimate_scepter",
 	"item_octarine_core",--
 	"item_black_king_bar",--
-	"item_angels_demise",--
+	"item_caduceus",--
 	"item_assault",--
 	"item_travel_boots",
 	"item_moon_shard",
@@ -110,7 +110,7 @@ sRoleItemsBuyList['pos_3'] = {
 	"item_pipe",
 	"item_black_king_bar",--
 	sUtilityItem,--
-	"item_angels_demise",--
+	"item_caduceus",--
 	"item_assault",--
 	"item_travel_boots",
 	"item_monkey_king_bar",--
@@ -198,38 +198,11 @@ function X.MinionThink(hMinionUnit)
 
 end
 
---[[
-
-npc_dota_hero_bounty_hunter
-
-"Ability1"		"bounty_hunter_shuriken_toss"
-"Ability2"		"bounty_hunter_jinada"
-"Ability3"		"bounty_hunter_wind_walk"
-"Ability4"		"generic_hidden"
-"Ability5"		"generic_hidden"
-"Ability6"		"bounty_hunter_track"
-"Ability10"		"special_bonus_movement_speed_15"
-"Ability11"		"special_bonus_attack_damage_20"
-"Ability12"		"special_bonus_unique_bounty_hunter_2"
-"Ability13"		"special_bonus_hp_275"
-"Ability14"		"special_bonus_attack_speed_50"
-"Ability15"		"special_bonus_unique_bounty_hunter"
-"Ability16"		"special_bonus_evasion_40"
-"Ability17"		"special_bonus_unique_bounty_hunter_3"
-
-modifier_bounty_hunter_jinada
-modifier_bounty_hunter_wind_walk
-modifier_bounty_hunter_wind_walk_slow
-modifier_bounty_hunter_track
-
---]]
-
 local abilityQ = bot:GetAbilityByName( sAbilityList[1] )
 local abilityW = bot:GetAbilityByName( sAbilityList[2] )
 local abilityE = bot:GetAbilityByName( sAbilityList[3] )
 local FriendlyShadow = bot:GetAbilityByName( 'bounty_hunter_wind_walk_ally' )
 local abilityR = bot:GetAbilityByName( sAbilityList[6] )
-local talent3 = bot:GetAbilityByName( sTalentList[3] )
 
 local castQDesire, castQTarget
 local castEDesire
@@ -238,7 +211,6 @@ local castRDesire, castRTarget
 
 local nKeepMana, nMP, nHP, nLV, hEnemyList, hAllyList, botTarget, sMotive
 local aetherRange = 0
-local talent3Damage = 0
 
 function X.SkillsComplement()
 
@@ -255,7 +227,6 @@ function X.SkillsComplement()
 
 	local aether = J.IsItemAvailable( "item_aether_lens" )
 	if aether ~= nil then aetherRange = 250 end
-	if talent3:IsTrained() then talent3Damage = talent3:GetSpecialValueInt( "value" ) end
 
 
 
@@ -314,7 +285,8 @@ function X.ConsiderQ()
 	local nCastRange = abilityQ:GetCastRange() + aetherRange
 	local nCastPoint = abilityQ:GetCastPoint()
 	local nManaCost = abilityQ:GetManaCost()
-	local nDamage = abilityQ:GetSpecialValueInt( 'bonus_damage' ) + talent3Damage
+	-- Read the live ability value once; talent positions change between patches.
+	local nDamage = abilityQ:GetSpecialValueInt( 'bonus_damage' )
 	local nDamageType = DAMAGE_TYPE_MAGICAL
 	local nInRangeEnemyList = J.GetAroundEnemyHeroList( nCastRange )
 	local nCastTarget = nil

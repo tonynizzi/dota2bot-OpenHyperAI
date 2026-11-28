@@ -84,6 +84,8 @@ local TheSwarm          = bot:GetAbilityByName('weaver_the_swarm')
 local Shukuchi          = bot:GetAbilityByName('weaver_shukuchi')
 -- local GeminateAttack    = bot:GetAbilityByName('weaver_geminate_attack')
 local TimeLapse         = bot:GetAbilityByName('weaver_time_lapse')
+-- 7.42: Scepter ally Time Lapse is a separate ability (shares cooldown with the base, self-only one)
+local TimeLapseAlly     = bot:GetAbilityByName('weaver_time_lapse_ally')
 
 local TheSwarmDesire, TheSwarmLocation
 local ShukuchiDesire
@@ -97,6 +99,7 @@ function X.SkillsComplement()
     if J.CanNotUseAbility(bot) then return end
 
     botTarget = J.GetProperTarget(bot)
+    if TimeLapseAlly == nil then TimeLapseAlly = bot:GetAbilityByName('weaver_time_lapse_ally') end
     if not bot:HasModifier("modifier_weaver_shukuchi")
     then
         bot.tryShukuchiKill = false
@@ -110,8 +113,9 @@ function X.SkillsComplement()
             bot:Action_UseAbility(TimeLapse)
         else
             if bot:HasScepter()
+            and J.CanCastAbility(TimeLapseAlly)
             then
-                bot:Action_UseAbilityOnEntity(TimeLapse, Target)
+                bot:Action_UseAbilityOnEntity(TimeLapseAlly, Target)
             end
         end
 
@@ -459,12 +463,14 @@ function X.ConsiderShukuchi()
 end
 
 function X.ConsiderTimeLapse()
-    if not TimeLapse:IsFullyCastable()
+    local bCanSelf = J.CanCastAbility(TimeLapse)
+    local bCanAlly = bot:HasScepter() and J.CanCastAbility(TimeLapseAlly)
+    if not bCanSelf and not bCanAlly
     then
         return BOT_ACTION_DESIRE_NONE, nil
     end
 
-	if J.IsRetreating(bot)
+	if bCanSelf and J.IsRetreating(bot)
 	then
         local nInRangeEnemy = J.GetNearbyHeroes(bot,1600, true, BOT_MODE_NONE)
         for _, enemyHero in pairs(nInRangeEnemy)
@@ -496,9 +502,9 @@ function X.ConsiderTimeLapse()
         end
 	end
 
-	if bot:HasScepter()
+	if bCanAlly
 	then
-        local nCastRange = TimeLapse:GetCastRange()
+        local nCastRange = J.GetProperCastRange(false, bot, TimeLapseAlly:GetCastRange())
 		local nInRangeAlly = J.GetNearbyHeroes(bot,nCastRange, false, BOT_MODE_NONE)
 
 		for _, allyHero in pairs(nInRangeAlly)

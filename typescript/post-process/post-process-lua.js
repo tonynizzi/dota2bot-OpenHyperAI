@@ -2,13 +2,14 @@ const fs = require("fs");
 const path = require("path");
 
 // Define the root directory containing the generated Lua files
-const luaRootDirectory = path.join(__dirname, "../../bots");
+const luaRootDirectory = process.argv[2] ? path.resolve(process.argv[2]) : path.join(__dirname, "../../bots");
 
 // Function to replace paths in a Lua file
 function replacePathsInFile(filePath) {
     fs.readFile(filePath, "utf8", (err, data) => {
         if (err) {
             console.error(`Error reading file ${filePath}:`, err);
+            process.exitCode = 1;
             return;
         }
 
@@ -61,6 +62,7 @@ function replacePathsInFile(filePath) {
             fs.writeFile(filePath, updatedData, "utf8", err => {
                 if (err) {
                     console.error(`Error writing file ${filePath}:`, err);
+                    process.exitCode = 1;
                 } else {
                     // console.log(`Processed and updated file: ${filePath}`);
                 }
@@ -76,6 +78,7 @@ function processDirectory(directory) {
     fs.readdir(directory, { withFileTypes: true }, (err, entries) => {
         if (err) {
             console.error(`Error reading directory ${directory}:`, err);
+            process.exitCode = 1;
             return;
         }
 

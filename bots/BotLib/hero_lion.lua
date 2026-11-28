@@ -180,7 +180,10 @@ local abilityE = bot:GetAbilityByName( sAbilityList[3] )
 local abilityR = bot:GetAbilityByName( sAbilityList[6] )
 local talent4 = bot:GetAbilityByName( sTalentList[4] )
 local talent5 = bot:GetAbilityByName( sTalentList[5] )
-local talent8 = bot:GetAbilityByName( sTalentList[8] )
+-- Resolve Hex targeting from the live ability, since talents and upgrades can change it.
+function X.IsHexPointTarget()
+    return J.Utils.AbilityBehaviorHasFlag(abilityW:GetBehavior(), ABILITY_BEHAVIOR_POINT)
+end
 
 local castQDesire, castQLocation
 local castWDesire, castWTarget
@@ -261,7 +264,7 @@ function X.SkillsComplement()
 
 		J.SetQueuePtToINT( bot, true )
 
-		if talent8:IsTrained()
+		if X.IsHexPointTarget()
 		then
 			bot:ActionQueue_UseAbilityOnLocation( abilityW, castWTarget )
 		else
@@ -531,12 +534,12 @@ function X.ConsiderW()
 	for _, npcEnemy in pairs( nInBonusEnemyList )
 	do
 		if J.IsValidHero( npcEnemy )
-			and ( J.CanCastOnTargetAdvanced( npcEnemy ) or talent8:IsTrained() )
+			and ( J.CanCastOnTargetAdvanced( npcEnemy ) or X.IsHexPointTarget() )
 			and J.CanCastOnNonMagicImmune( npcEnemy )
 		then
 			if npcEnemy:IsChanneling()
 			then
-				if talent8:IsTrained()
+				if X.IsHexPointTarget()
 				then
 					return BOT_ACTION_DESIRE_HIGH, npcEnemy:GetLocation(), 'W-打断吟唱:'..J.Chat.GetNormName( npcEnemy )
 				else
@@ -547,7 +550,7 @@ function X.ConsiderW()
 			if npcEnemy:IsCastingAbility()
 				and J.IsInRange( bot, npcEnemy, nCastRange + 50 )
 			then
-				if talent8:IsTrained()
+				if X.IsHexPointTarget()
 				then
 					return BOT_ACTION_DESIRE_HIGH, npcEnemy:GetLocation(), 'W-打断施法:'..J.Chat.GetNormName( npcEnemy )
 				else
@@ -563,7 +566,7 @@ function X.ConsiderW()
 		and ( #nInBonusEnemyList >= 2 or #hAllyList >= 3 )
 	then
 
-		if talent8:IsTrained()
+		if X.IsHexPointTarget()
 		then
 			local nAoeLoc = J.GetAoeEnemyHeroLocation( bot, nCastRange, 250, 2 )
 			if nAoeLoc ~= nil
@@ -579,7 +582,7 @@ function X.ConsiderW()
 		do
 			if J.IsValid( npcEnemy )
 				and J.CanCastOnNonMagicImmune( npcEnemy )
-				and ( J.CanCastOnTargetAdvanced( npcEnemy ) or talent8:IsTrained() )
+				and ( J.CanCastOnTargetAdvanced( npcEnemy ) or X.IsHexPointTarget() )
 				and not J.IsDisabled( npcEnemy )
 				and not J.IsTaunted( npcEnemy )
 				and not npcEnemy:IsDisarmed()
@@ -596,7 +599,7 @@ function X.ConsiderW()
 		if npcMostDangerousEnemy ~= nil
 			and J.IsInRange( bot, npcMostDangerousEnemy, nCastRange + 50 )
 		then
-			if talent8:IsTrained()
+			if X.IsHexPointTarget()
 			then
 				return BOT_ACTION_DESIRE_HIGH, npcMostDangerousEnemy:GetLocation(), 'W-团战:'..J.Chat.GetNormName( npcMostDangerousEnemy )
 			else
@@ -612,13 +615,13 @@ function X.ConsiderW()
 	then
 		if J.IsValidHero( botTarget )
 			and J.CanCastOnNonMagicImmune( botTarget )
-			and ( J.CanCastOnTargetAdvanced( botTarget ) or talent8:IsTrained() )
+			and ( J.CanCastOnTargetAdvanced( botTarget ) or X.IsHexPointTarget() )
 			and J.IsInRange( bot, botTarget, nCastRange + 150 )
 			and not J.IsDisabled( botTarget )
 			and not J.IsTaunted( botTarget )
 			and not botTarget:IsDisarmed()
 		then
-			if talent8:IsTrained()
+			if X.IsHexPointTarget()
 			then
 				return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation(), 'W-进攻:'..J.Chat.GetNormName( botTarget )
 			else
@@ -637,12 +640,12 @@ function X.ConsiderW()
 		do
 			if J.IsValid( npcEnemy )
 				and J.CanCastOnNonMagicImmune( npcEnemy )
-				and ( J.CanCastOnTargetAdvanced( npcEnemy ) or talent8:IsTrained() )
+				and ( J.CanCastOnTargetAdvanced( npcEnemy ) or X.IsHexPointTarget() )
 				and not J.IsDisabled( npcEnemy )
 				and not J.IsTaunted( npcEnemy )
 				and not npcEnemy:IsDisarmed()
 			then
-				if talent8:IsTrained()
+				if X.IsHexPointTarget()
 				then
 					return BOT_ACTION_DESIRE_HIGH, npcEnemy:GetLocation(), 'W-保护自己:'..J.Chat.GetNormName( npcEnemy )
 				else
@@ -662,12 +665,12 @@ function X.ConsiderW()
 				and ( bot:WasRecentlyDamagedByHero( npcEnemy, 4.0 )
 						or GetUnitToUnitDistance( bot, npcEnemy ) <= 600 )
 				and J.CanCastOnNonMagicImmune( npcEnemy )
-				and ( J.CanCastOnTargetAdvanced( npcEnemy ) or talent8:IsTrained() )
+				and ( J.CanCastOnTargetAdvanced( npcEnemy ) or X.IsHexPointTarget() )
 				and not J.IsDisabled( npcEnemy )
 				and not J.IsTaunted( npcEnemy )
 				and not npcEnemy:IsDisarmed()
 			then
-				if talent8:IsTrained()
+				if X.IsHexPointTarget()
 				then
 					return BOT_ACTION_DESIRE_HIGH, npcEnemy:GetLocation(), 'W-撤退:'..J.Chat.GetNormName( npcEnemy )
 				else
@@ -685,7 +688,7 @@ function X.ConsiderW()
 			and not J.IsDisabled( botTarget )
 			and not botTarget:IsDisarmed()
 		then
-			if talent8:IsTrained()
+			if X.IsHexPointTarget()
 			then
 				return BOT_ACTION_DESIRE_HIGH, botTarget:GetLocation(), 'W-肉山:'..J.Chat.GetNormName( botTarget )
 			else

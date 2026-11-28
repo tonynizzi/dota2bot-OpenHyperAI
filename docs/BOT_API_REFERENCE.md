@@ -1162,7 +1162,7 @@ end
 | `GetCurrentVisionRange()` | `int` | Active vision radius (changes with day/night) |
 | `GetDayTimeVisionRange()` | `int` | Vision range during daytime |
 | `GetNightTimeVisionRange()` | `int` | Vision range at night |
-| `CanBeSeen()` | `bool` | Is this unit visible to the enemy team? |
+| `CanBeSeen()` | `bool` | Can our team currently see this unit? Always true for allied bots; many enemy-unit properties require visibility to be valid. |
 
 ### Status Effects
 

@@ -52,13 +52,18 @@ local targetLockUntil = -90
 
 local function SetStickyTarget(t)
     if t == nil then return end
-    -- Don't switch targets too fast
-    if targetUnit ~= nil and targetUnit ~= t and DotaTime() < targetLockUntil then
+    -- Keep a usable target briefly, but never lock onto a dead or unreachable unit.
+    if targetUnit ~= t and DotaTime() < targetLockUntil
+    and J.Utils.IsValidUnit(targetUnit) and X.CanBeAttacked(targetUnit)
+    and GetUnitToUnitDistance(bot, targetUnit) <= 1800 then
+        bot:SetTarget(targetUnit)
         return
+    end
+    if targetUnit ~= t then
+        targetLockUntil = DotaTime() + TARGET_LOCK_SEC
     end
     targetUnit = t
     bot:SetTarget(t)
-    targetLockUntil = DotaTime() + TARGET_LOCK_SEC
 end
 
 local function CapForLanePush(desire)
@@ -111,7 +116,6 @@ function GetDesireHelper()
     target, ShouldHelpWhenCoreIsTargeted = X.ConsiderHelpWhenCoreIsTargeted()
     if ShouldHelpWhenCoreIsTargeted then
         SetStickyTarget(target)
-        targetUnit = target
         return RemapValClamped(J.GetHP(bot), 0, 0.5, BOT_MODE_DESIRE_NONE, 0.98)
     end
 
@@ -121,7 +125,6 @@ function GetDesireHelper()
     target, ShouldHelpAlly = ConsiderHelpAlly()
     if ShouldHelpAlly then
         SetStickyTarget(target)
-        targetUnit = target
         return RemapValClamped(J.GetHP(bot), 0, 0.6, BOT_MODE_DESIRE_NONE, 0.98)
     end
 
@@ -1463,6 +1466,16 @@ function ItemOpsDesire()
                         if mostCDHero ~= nil and mostCDHero:IsBot() and bot == mostCDHero then
                             PickedItem = droppedItem
                         end
+                    end
+                    -- 7.42: Tormentor drops a Greater Horn of Battle. It costs 0 gold, so the
+                    -- cost gate below would ignore it; any nearby bot with a free main slot goes for it.
+                    if itemName == 'item_horn_of_battle_greater'
+                    and not J.HasItem(bot, 'item_horn_of_battle_greater')
+                    and J.Item.GetEmptyNonBackpackInventoryAmount(bot) > 0
+                    and GetUnitToLocationDistance(bot, droppedItem.location) < 1600 then
+                        PickedItem = droppedItem
+                        return RemapValClamped(GetUnitToLocationDistance(bot, droppedItem.location),
+                            1600, 0, BOT_ACTION_DESIRE_MODERATE, BOT_ACTION_DESIRE_VERYHIGH)
                     end
                     local nDropOwner = droppedItem.owner
                     if nDropOwner ~= nil and nDropOwner == bot and not string.find(itemName, 'token') then

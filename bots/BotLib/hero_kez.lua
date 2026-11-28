@@ -306,7 +306,7 @@ function X.ConsiderEchoSlash()
     local nFrontTravelDistance = EchoSlash:GetSpecialValueInt('travel_distance')
     local nRadius = EchoSlash:GetSpecialValueInt('katana_radius')
     local nAttackDamagePercentage = EchoSlash:GetSpecialValueInt('katana_echo_damage') / 100
-    local nBonusHeroDamage = EchoSlash:GetSpecialValueInt('echo_hero_damage')
+    local nBonusHeroDamage = EchoSlash:GetSpecialValueInt('echo_base_damage')
     local nDamage = bot:GetAttackDamage() * nAttackDamagePercentage
     local nStrikeCount = EchoSlash:GetSpecialValueInt('katana_strikes')
     local nManaAfter = J.GetManaAfter(EchoSlash:GetManaCost())
@@ -491,16 +491,16 @@ function X.ConsiderRaptorDance()
 	local nRadius = RaptorDance:GetSpecialValueInt( "radius" ) - 150
 	local nBaseDamage = RaptorDance:GetSpecialValueInt( "base_damage" )
 	local nStrikes = RaptorDance:GetSpecialValueInt( "strikes" )
-	local nMaxHealthDamagePct = RaptorDance:GetSpecialValueInt( "max_health_damage_pct" )
+	local nMaxHealthDamagePct = RaptorDance:GetSpecialValueFloat( "max_health_damage_pct" ) / 100
 
 	--kill
 	for _, npcEnemy in pairs( hEnemyList )
 	do
 		if J.IsValidHero( npcEnemy )
-		and J.IsInRange(bot, botTarget, nRadius)
+		and J.IsInRange(bot, npcEnemy, nRadius)
 		then
-			local nDamage = (nBaseDamage + bot:GetAttackDamage() + nMaxHealthDamagePct * botTarget:GetMaxHealth()) * nStrikes
-			if J.CanKillTarget( npcEnemy, nDamage, DAMAGE_TYPE_PURE )
+			local nDamage = (nBaseDamage + nMaxHealthDamagePct * npcEnemy:GetMaxHealth()) * nStrikes
+			if J.CanKillTarget( npcEnemy, nDamage, DAMAGE_TYPE_PHYSICAL )
 			then
 				return BOT_ACTION_DESIRE_HIGH, 'r击杀'..J.Chat.GetNormName( npcEnemy )
 			end

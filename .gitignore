@@ -41,6 +41,7 @@ luac.out
 # Dota
 bots_example/
 temp_build/
+__pycache__/
 
 # .vscode
 .vscode

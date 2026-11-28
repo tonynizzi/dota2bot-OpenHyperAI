@@ -127,7 +127,13 @@ local Doom          = bot:GetAbilityByName('doom_bringer_doom')
 local DevourAbility1 = bot:GetAbilityByName('doom_bringer_empty1')
 local DevourAbility2 = bot:GetAbilityByName('doom_bringer_empty2')
 
+-- special_bonus_unique_doom_2 no longer exists (nil); ancient Devour now comes from Shard (can_target_ancient).
 local DevourAncientTalent = bot:GetAbilityByName('special_bonus_unique_doom_2')
+
+local function CanDevourAncient()
+    return (DevourAncientTalent ~= nil and DevourAncientTalent:IsTrained())
+        or J.HasAghanimsShard(bot)
+end
 
 local DevourDesire, DevourTarget
 local ScorchedEarthDesire
@@ -308,7 +314,7 @@ function X.ConsiderDevour()
                 if nCreepTarget ~= nil
                 then
                     if nCreepTarget:IsAncientCreep()
-                    and DevourAncientTalent:IsTrained()
+                    and CanDevourAncient()
                     then
                         return BOT_ACTION_DESIRE_HIGH, nCreepTarget
                     end

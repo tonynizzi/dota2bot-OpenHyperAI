@@ -705,7 +705,7 @@ require(GetScriptDirectory().."/ts_libs/utils/json")
 ____exports.DebugMode = false
 ____exports.ScriptID = 3246316298
 ____exports.RadiantFountainTpPoint = Vector(-7172, -6652, 384)
-____exports.DireFountainTpPoint = Vector(6982, 6422, 392)
+____exports.DireFountainTpPoint = Vector(6770, 6210, 392)
 ____exports.RadiantRoshanLoc = Vector(-2984, 2349, 1092)
 ____exports.DireRoshanLoc = Vector(2980, -2816, 1107)
 ____exports.BarrackList = {
@@ -1063,7 +1063,7 @@ function ____exports.SetCachedVars(key, value)
     ____exports.GameStates.cachedVars[key .. "-Time"] = DotaTime()
 end
 function ____exports.GetCachedVars(key, withinTime)
-    if not ____exports.GameStates.cachedVars or not ____exports.GameStates.cachedVars[key] then
+    if not ____exports.GameStates.cachedVars or ____exports.GameStates.cachedVars[key] == nil then
         return nil
     end
     if DotaTime() - ____exports.GameStates.cachedVars[key .. "-Time"] <= withinTime then
@@ -1692,13 +1692,18 @@ function ____exports.IsTeamPushingSecondTierOrHighGround(bot)
     end
     local enemyAncient = GetAncient(GetOpposingTeam())
     if enemyAncient ~= nil then
-        for ____, playerdId in ipairs(GetTeamPlayers(bot:GetTeam())) do
-            if IsHeroAlive(playerdId) then
-                local teamMember = GetTeamMember(playerdId)
-                if teamMember ~= nil and #teamMember:GetNearbyHeroes(2000, false, BotMode.None) >= 2 and (____exports.IsNearEnemySecondTierTower(teamMember, 2000) or ____exports.IsNearEnemyHighGroundTower(teamMember, 3000) or GetUnitToUnitDistance(teamMember, enemyAncient) < 3000) then
-                    ____exports.SetCachedVars(cacheKey, true)
-                    return true
+        local teamPlayers = GetTeamPlayers(bot:GetTeam())
+        do
+            local index = 0
+            while index < #teamPlayers do
+                if IsHeroAlive(teamPlayers[index + 1]) then
+                    local teamMember = GetTeamMember(index + 1)
+                    if teamMember ~= nil and #teamMember:GetNearbyHeroes(2000, false, BotMode.None) >= 2 and (____exports.IsNearEnemySecondTierTower(teamMember, 2000) or ____exports.IsNearEnemyHighGroundTower(teamMember, 3000) or GetUnitToUnitDistance(teamMember, enemyAncient) < 3000) then
+                        ____exports.SetCachedVars(cacheKey, true)
+                        return true
+                    end
                 end
+                index = index + 1
             end
         end
     end
@@ -1729,7 +1734,7 @@ function ____exports.CountMissingEnemyHeroes()
     local count = 0
     for ____, playerdId in ipairs(GetTeamPlayers(GetOpposingTeam())) do
         do
-            local __continue262
+            local __continue261
             repeat
                 if IsHeroAlive(playerdId) then
                     local lastSeenInfo = GetHeroLastSeenInfo(playerdId)
@@ -1737,14 +1742,14 @@ function ____exports.CountMissingEnemyHeroes()
                         local firstInfo = lastSeenInfo[1]
                         if firstInfo.time_since_seen >= 2.5 then
                             count = count + 1
-                            __continue262 = true
+                            __continue261 = true
                             break
                         end
                     end
                 end
-                __continue262 = true
+                __continue261 = true
             until true
-            if not __continue262 then
+            if not __continue261 then
                 break
             end
         end
@@ -1800,31 +1805,31 @@ local blinkBuffer = 1200
 function ____exports.IsAnySpecialAOEThreatNearby(bot, nRadius)
     for ____, enemy in ipairs(GetUnitList(UnitType.EnemyHeroes)) do
         do
-            local __continue291
+            local __continue290
             repeat
                 if not ____exports.IsValidHero(enemy) then
-                    __continue291 = true
+                    __continue290 = true
                     break
                 end
                 local enemyName = enemy:GetUnitName()
                 if not (SpecialAOEHeroesDetails[enemyName] ~= nil) then
-                    __continue291 = true
+                    __continue290 = true
                     break
                 end
                 if GetUnitToUnitDistance(bot, enemy) > nRadius + blinkBuffer then
-                    __continue291 = true
+                    __continue290 = true
                     break
                 end
                 if #bot:GetNearbyHeroes(nRadius, false, BotMode.None) <= 1 and #bot:GetNearbyLaneCreeps(nRadius, false) <= 2 then
-                    __continue291 = true
+                    __continue290 = true
                     break
                 end
                 if DoesHeroMeetThreatConditions(enemy, SpecialAOEHeroesDetails[enemyName]) then
                     return true
                 end
-                __continue291 = true
+                __continue290 = true
             until true
-            if not __continue291 then
+            if not __continue290 then
                 break
             end
         end

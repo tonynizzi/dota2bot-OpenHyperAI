@@ -229,7 +229,11 @@ function X.SkillsComplement()
 	ViscousNasalGooDesire, ViscousNasalGooTarget = X.ConsiderViscousNasalGoo()
     if ViscousNasalGooDesire > 0 then
         J.SetQueuePtToINT(bot, false)
-        bot:ActionQueue_UseAbilityOnEntity(ViscousNasalGoo, ViscousNasalGooTarget)
+        if J.Utils.AbilityBehaviorHasFlag(ViscousNasalGoo:GetBehavior(), ABILITY_BEHAVIOR_NO_TARGET) then
+            bot:ActionQueue_UseAbility(ViscousNasalGoo)
+        else
+            bot:ActionQueue_UseAbilityOnEntity(ViscousNasalGoo, ViscousNasalGooTarget)
+        end
         return
     end
 

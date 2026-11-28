@@ -72,7 +72,12 @@ end
 -- Override the print function
 local orig_print = print
 function print(...)
-    if not Utils.DebugMode then return end
+    -- Diagnostic emitters have their own opt-in switches and rate limits.
+    local first = select(1, ...)
+    local isRoshanTrace = type(first) == 'string' and string.sub(first, 1, 13) == '[OHA_ROSHAN] '
+    local isCastTrace = type(first) == 'string' and string.sub(first, 1, 11) == '[OHA_CAST] '
+    local isWatcherTrace = type(first) == 'string' and string.sub(first, 1, 14) == '[OHA_WATCHER] '
+    if not Utils.DebugMode and not isRoshanTrace and not isCastTrace and not isWatcherTrace then return end
 
     local args = {...}
     for i, v in ipairs(args) do
@@ -464,6 +469,10 @@ function CDOTA_Bot_Script:GetMaxMana()
     end
     return originalGetMaxMana(self)
 end
+
+-- Install after the existing action guards so attempted casts remain observable.
+require(GetScriptDirectory()..'/FunLib/action_diagnostics').Install(
+    CDOTA_Bot_Script, require(GetScriptDirectory()..'/FunLib/custom_loader'))
 
 local X = {
 	orig_GetTeamPlayers = orig_GetTeamPlayers,

@@ -196,14 +196,14 @@ function X.SkillsComplement()
     LiquidCourageDesire, LiquidCourageTarget = X.ConsiderLiquidCourage()
     if LiquidCourageDesire > 0 then
         J.SetQueuePtToINT(bot, false)
-        bot:ActionQueue_UseAbilityOnLocation(LiquidCourage, LiquidCourageTarget)
+        bot:ActionQueue_UseAbilityOnEntity(LiquidCourage, LiquidCourageTarget)
         return
     end
 
     PrimalCompanionDesire = X.ConsiderPrimalCompanion()
     if PrimalCompanionDesire > 0
     then
-        bot:Action_UseAbility(PrimalSplit)
+        bot:Action_UseAbility(PrimalCompanion)
         return
     end
 end

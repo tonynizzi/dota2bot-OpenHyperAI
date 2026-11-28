@@ -19,8 +19,17 @@ local SentryWard = nil
 local hTargetSpot = nil
 local fLastWardPlantTime = -math.huge
 
+local function IsWardUsable(ward)
+	if not J.CanCastAbility(ward) then return false end
+	-- A cached handle can survive a swap into the backpack or stash.
+	for slot = 0, 5 do
+		if bot:GetItemInSlot(slot) == ward then return true end
+	end
+	return false
+end
+
 function GetDesire()
-	if J.GetPosition(bot) <= 3 then return false end
+	if J.GetPosition(bot) <= 3 then return BOT_MODE_DESIRE_NONE end
 	-- local cacheKey = 'GetWardDesire'..tostring(bot:GetPlayerID())
 	-- local cachedVar = J.Utils.GetCachedVars(cacheKey, 0.6 * (1 + Customize.ThinkLess))
 	-- if DotaTime() > 30 and cachedVar ~= nil then return cachedVar end
@@ -29,6 +38,9 @@ function GetDesire()
 	return RemapValClamped(J.GetHP(bot) * res, 0, 1, BOT_MODE_DESIRE_NONE, res)
 end
 function GetDesireHelper()
+	ObserverWard = nil
+	SentryWard = nil
+	hTargetSpot = nil
     if not X.IsSuitableToWard() then
         return BOT_MODE_DESIRE_NONE
     end
@@ -70,6 +82,8 @@ function GetDesireHelper()
 		end
     end
 
+	-- No observer destination was selected; do not use an observer at a sentry spot.
+	ObserverWard = nil
 	for i = 0, 5 do
         local hItem = bot:GetItemInSlot(i)
         if hItem then
@@ -101,7 +115,7 @@ function Think()
 	if J.CanNotUseAction(bot) then return end
 	if J.Utils.IsBotThinkingMeaningfulAction(bot, Customize.ThinkLess, "ward") then return end
 	if hTargetSpot then
-		if ObserverWard and J.CanCastAbility(ObserverWard) then
+		if ObserverWard and IsWardUsable(ObserverWard) then
 			if GetUnitToLocationDistance(bot, hTargetSpot.location) <= nObserverWardCastRange then
 				if ObserverWard:GetName() == 'item_ward_observer' then
 					bot:Action_UseAbilityOnLocation(ObserverWard, hTargetSpot.location)
@@ -122,7 +136,7 @@ function Think()
 			end
 		end
 
-		if SentryWard and J.CanCastAbility(SentryWard) then
+		if SentryWard and IsWardUsable(SentryWard) then
 			if GetUnitToLocationDistance(bot, hTargetSpot.location) <= nSentryWardCastRange then
 				local fLength = 0
 				if W.IsOtherWardClose(hTargetSpot.location, 'npc_dota_observer_wards', 300, true, false) then

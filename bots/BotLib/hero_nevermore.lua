@@ -203,7 +203,6 @@ local abilityC = bot:GetAbilityByName( sAbilityList[3] )
 local abilityN = bot:GetAbilityByName( sAbilityList[4] )
 local FeastOfSouls = bot:GetAbilityByName('nevermore_frenzy')
 local abilityR = bot:GetAbilityByName( sAbilityList[6] )
-local talent4 = bot:GetAbilityByName( sTalentList[4] )
 
 local castZDesire
 local castXDesire
@@ -387,8 +386,6 @@ function X.Consider( nAbility, nDistance )
 	local nDamageType = DAMAGE_TYPE_MAGICAL
 	local nSkillLV	 = nAbility:GetLevel()
 	local nDamage	 = 20 + 70 * nSkillLV
-	
-	if talent4:IsTrained() then nDamage = nDamage + talent4:GetSpecialValueInt( "value" ) end
 	
 	local nBonus	 = nAbility:GetSpecialValueInt( 'stack_bonus_damage' )
 	local keyWord	 = "ranged"

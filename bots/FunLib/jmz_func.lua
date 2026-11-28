@@ -6,7 +6,7 @@ local tAllyHeroList = {}
 local tAllyHumanList = {}
 
 local RadiantFountain = Vector( -6619, -6336, 384 )
-local DireFountain = Vector( 6928, 6372, 392 )
+local DireFountain = Vector( 6716, 6160, 392 ) -- 7.42: Dire fountain moved ~300 units toward the Ancient (was 6928, 6372); estimate, verify in-game
 local RadiantTormentorLoc = Vector(7499, -7847, 256)
 local DireTormentorLoc = Vector(-7229, 7933, 256)
 
@@ -2530,7 +2530,7 @@ function J.GetNearbyHeroes(bot, nRadius, bEnemy, bBotMode)
 	do
 		if J.IsValidHero(hero)
 		and not J.IsMeepoClone(hero)
-		and not bot:HasModifier('modifier_arc_warden_tempest_double') then
+		and not hero:HasModifier('modifier_arc_warden_tempest_double') then
 			table.insert(heroes, hero)
 		end
 	end
@@ -2571,19 +2571,12 @@ function J.GetAroundBotUnitList( bot, nRadius, bEnemy )
 	local creepList = bot:GetNearbyCreeps( nRadius, bEnemy )
 	local unitList = {}
 
-	if #heroList > 0 and #creepList > 0
-	then
-		unitList = heroList
-		for i = 1, #creepList
-		do
-			table.insert( unitList, creepList[1] )
-		end
-	elseif #heroList == 0
-	then
-		unitList = creepList
-	elseif #creepList == 0
-	then
-		unitList = heroList
+	-- Build a fresh list so callers cannot mutate the source query results.
+	for _, hero in ipairs(heroList) do
+		table.insert(unitList, hero)
+	end
+	for _, creep in ipairs(creepList) do
+		table.insert(unitList, creep)
 	end
 
 	return unitList
@@ -4975,14 +4968,28 @@ function J.GetArmorReducers(hero)
 end
 
 local killTime = 0.0
+local roshanKillCount = 0
 function J.IsRoshanAlive()
 	if GetRoshanKillTime() > killTime
     then
         killTime = GetRoshanKillTime()
+        roshanKillCount = roshanKillCount + 1
+    end
+
+    -- 7.42: the base respawn timer (8 min, plus up to 3 min of variance) drops by
+    -- 1 minute per Roshan kill, to a minimum of 5 minutes. We assume the first kill
+    -- still uses the 8 minute base and wait for the worst case (base + 3 min).
+    -- The turbo window is left at its old 6 minutes (not verified for 7.42).
+    local nMaxRespawn = 11 * 60
+    if J.IsModeTurbo()
+    then
+        nMaxRespawn = 6 * 60
+    else
+        nMaxRespawn = (math.max(5, 8 - math.max(0, roshanKillCount - 1)) + 3) * 60
     end
 
     if GetRoshanKillTime() == 0
-	or DotaTime() - killTime > (J.IsModeTurbo() and (6 * 60) or (11 * 60))
+	or DotaTime() - killTime > nMaxRespawn
     then
         return true
     end
@@ -4990,34 +4997,48 @@ function J.IsRoshanAlive()
     return false
 end
 
-function J.HasEnoughDPSForRoshan(heroes)
-    local DPS = 0
-    local DPSThreshold = 0
-    local plannedTimeToKill = 60
-
-    -- Roshan Stats
-    local baseHealth = 6000
-    local baseArmor = 30
-    local armorPerInterval = 0.375
-    local maxHealthBonusPerInterval = 130 * 2
-
-    local roshanHealth = baseHealth + maxHealthBonusPerInterval * math.floor(DotaTime() / 60)
-
+function J.GetRoshanParticipants(heroes, pit)
+    local participants, seen = {}, {}
     for _, h in pairs(heroes) do
-        local roshanArmor = baseArmor + armorPerInterval * math.floor(DotaTime() / 60) - J.GetArmorReducers(h)
-
-        -- Only right click damage for now
-        local attackDamage = h:GetAttackDamage()
-        local attackSpeed = h:GetAttackSpeed()
-
-        local dps = attackDamage * attackSpeed * (1 - roshanArmor / (roshanArmor + 20))
-        DPS = DPS + dps
+        if J.IsValidHero(h) and h:IsAlive() and not h:IsIllusion()
+        and not J.IsMeepoClone(h)
+        and not h:HasModifier('modifier_arc_warden_tempest_double')
+        and not seen[h:GetPlayerID()]
+        and J.GetHP(h) >= 0.5 and not J.IsRetreating(h)
+        and not h:IsDisarmed() and not h:IsStunned()
+        and GetUnitToLocationDistance(h, pit) <= 2500 then
+            seen[h:GetPlayerID()] = true
+            table.insert(participants, h)
+        end
     end
+    return participants
+end
 
-    DPS =  DPS / #heroes
-
-    DPSThreshold = roshanHealth / plannedTimeToKill
-    return DPS >= DPSThreshold
+function J.HasEnoughDPSForRoshan(heroes, roshan)
+    if #heroes == 0 then return false end
+    local duration, dps = 60, 0
+    -- Unseen fallback retains the existing growth estimates; no speculative debuffs.
+    local minutes = math.floor(math.max(0, DotaTime()) / 60)
+    local health, armor, regen = 6000 + 260 * minutes, 30 + 0.375 * minutes, 20
+    local visible = J.IsRoshan(roshan)
+    if visible then
+        health = roshan:GetHealth()
+        regen = math.max(0, roshan:GetHealthRegen())
+    end
+    local pit = J.GetCurrentRoshanLocation()
+    for _, h in ipairs(heroes) do
+        local interval = h:GetSecondsPerAttack()
+        if interval > 0 then
+            -- Live mitigation already includes applied armor debuffs.
+            local damage = visible and roshan:GetActualIncomingDamage(h:GetAttackDamage(), DAMAGE_TYPE_PHYSICAL)
+                or h:GetAttackDamage() / (1 + 0.06 * armor)
+            local arrival = GetUnitToLocationDistance(h, pit) / math.max(1, h:GetCurrentMovementSpeed())
+            local uptime = math.max(0, duration - arrival) / duration
+            dps = dps + damage / interval * uptime
+        end
+    end
+    -- Leave 20% for movement/bashes. This is an estimate, not a survival guarantee.
+    return dps * 0.8 >= health / duration + regen
 end
 
 function J.IsNotSelf(bot, ally)
